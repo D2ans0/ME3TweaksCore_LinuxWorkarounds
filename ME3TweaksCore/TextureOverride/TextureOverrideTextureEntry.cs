@@ -120,7 +120,7 @@ namespace ME3TweaksCore.TextureOverride
 
             var texBin = ObjectBinary.From<UTexture2D>(texture); // I think everything serializes from here?
             var tfc = texture.GetProperty<NameProperty>(@"TextureFileCacheName");
-            var tfcGuidProp = texture.GetProperty<StructProperty>(@"TextureFileCacheGuid");
+            var tfcGuidProp = texture.GetProperty<StructProperty>(@"TFCFileGuid");
 
             var paddedEndPos = stream.Position + IFPMaxLength;
             stream.WriteStringUnicodeNull(TextureIFP);
