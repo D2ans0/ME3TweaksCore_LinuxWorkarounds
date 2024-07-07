@@ -156,8 +156,8 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     stream.WriteInt32(mip.DataOffset); // TFC offset
                 }
-                stream.WriteInt32(mip.SizeX);
-                stream.WriteInt32(mip.SizeY);
+                stream.WriteInt16((short)mip.SizeX);
+                stream.WriteInt16((short)mip.SizeY);
                 int mipFlag = 0;
                 if (!mip.IsLocallyStored)
                 {
@@ -169,7 +169,7 @@ namespace ME3TweaksCore.TextureOverride
             while (i < 13)
             {
                 // Write out blank data.
-                stream.WriteZeros(0x16); // null data for undefined mips
+                stream.WriteZeros(0x14); // null data for undefined mips
                 i++;
             }
 
