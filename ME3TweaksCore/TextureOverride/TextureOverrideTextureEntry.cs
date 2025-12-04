@@ -89,7 +89,8 @@ namespace ME3TweaksCore.TextureOverride
             }
 
             // Read metadata about texture.
-            var texBin = ObjectBinary.From<UTexture2D>(texture); // I think everything serializes from here?
+            // We use just .From() so we can access it as LightMapTexture2D later.
+            UTexture2D texBin = ObjectBinary.From(texture) as UTexture2D; // I think everything serializes from here?
             var numPopulatedMips = texBin.Mips.Count(x => x.StorageType != StorageTypes.empty);
             var numEmptyMips = texBin.Mips.Count(x => x.StorageType == StorageTypes.empty);
 
@@ -271,7 +272,17 @@ namespace ME3TweaksCore.TextureOverride
             // Write out metadata - texture export, then truncate it;
             var rop = new RelinkerOptionsPackage() { CheckImportsWhenExportingToPackage = false };
             EntryExporter.ExportExportToPackage(texture, metadataPackage, out var ported, customROP: rop);
-            (ported as ExportEntry).WriteBinary([]);
+            if (texBin is LightMapTexture2D lm2d)
+            {
+                // We need to keep track of the lightmap flags.
+                // We simply store the flag value as the binary and will restore it later.
+                (ported as ExportEntry).WriteBinary(BitConverter.GetBytes((int)lm2d.LightMapFlags));
+            }
+            else
+            {
+                // Empty binary in metadata
+                (ported as ExportEntry).WriteBinary([]);
+            }
 
             // Unload the export to reduce memory usage
             package.UnloadExport(texture);

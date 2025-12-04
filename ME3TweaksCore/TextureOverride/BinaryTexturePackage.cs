@@ -310,7 +310,7 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="inMetadataFile">Input metadata file</param>
         /// <param name="outFolder">Directory to output files to</param>
-        public void ReconstituteSource(Stream btpStream, string inMetadataFile, string outFolder)
+        public void ReconstituteSource(Stream btpStream, string inMetadataFile, string outFolder, ProgressInfo pi = null)
         {
             MLog.Information($@"BTP RECONSTITUTION: Rebuild package files from BTP with metadata file {inMetadataFile}");
 
@@ -333,6 +333,7 @@ namespace ME3TweaksCore.TextureOverride
             var textures = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D")).ToList();
             var cache = new PackageCache();
             MLog.Information($@"BTP RECONSTITUTION: Beginning rebuild of {textures.Count} textures");
+            var done = 0;
 
             // Do all texture cubes first, so they appear in the first package.
             var textureCubeLoadList = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D") && x.Parent.IsA(@"TextureCube")).ToList();
@@ -352,6 +353,10 @@ namespace ME3TweaksCore.TextureOverride
                 // Now port the textures that are part of cubes.
                 foreach (var subCubeTexture in textureCubeLoadList)
                 {
+                    done++;
+                    pi.Value = done * 100.0 / textures.Count;
+                    pi.OnUpdate(pi);
+
                     largeDataSerializer.ExportInto(subCubeTexture, cache);
                 }
 
@@ -370,6 +375,10 @@ namespace ME3TweaksCore.TextureOverride
             // TO packages will never have textures at the root! So we purposely don't check for that here.
             foreach (var exp in textures.Where(x => !x.Parent.IsA("TextureCube")))
             {
+                done++;
+                pi.Value = done * 100.0 / textures.Count;
+                pi.OnUpdate(pi);
+                
                 metadataPackage.LoadExport(exp, true); // Load parents too.
                 ReconstituteTexture(btpStream, exp);
                 largeDataSerializer.ExportInto(exp, cache);
@@ -391,7 +400,7 @@ namespace ME3TweaksCore.TextureOverride
             var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath == exp.InstancedFullPath); // Should be IFP matching in the TO
 
             // Create T2D
-            var texture2D = UTexture2D.Create();
+            UTexture2D texture2D = exp.IsA(@"LightMapTexture2D") ? LightMapTexture2D.Create() : UTexture2D.Create();
             // Now fill out the mips
             int count = matchingEntry.PopulatedMipCount;
             foreach (var btpMip in matchingEntry.Mips)
@@ -435,10 +444,16 @@ namespace ME3TweaksCore.TextureOverride
                 texture2D.Mips.Add(mip);
             }
 
+            if (texture2D is LightMapTexture2D lm2d)
+            {
+                // We stored the lightmap flag in the metadata binary
+                lm2d.LightMapFlags = (ELightMapFlags) BitConverter.ToInt32(exp.GetBinaryData(), 0);
+            }
+
             exp.WriteBinary(texture2D);
 
 #if DEBUG
-            var test2d = ObjectBinary.From<UTexture2D>(exp);
+            var test2d = ObjectBinary.From(exp);
 #endif
         }
     }
