@@ -90,7 +90,6 @@ namespace ME3TweaksCore.TextureOverride
             using var btpStream = new FileStream(destFile, FileMode.Create);
             var compiler = new TextureOverrideCompiler();
             compiler.BuildBTPFromTO(this, sourceFolder, btpStream, dlcName, pi, metadataPackage);
-            metadataPackage.Save();
         }
     }
 }

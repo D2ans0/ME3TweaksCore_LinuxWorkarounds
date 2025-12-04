@@ -65,7 +65,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="btpEntry">The BTP entry for this texture that we will be populating data into</param>
         /// <param name="btpStream">The stream we are serializing mip data to</param>
         /// <param name="metadataPackage">Optional package for storing the texture metadata when shipping a btp only.</param>
-        public void Serialize(TextureOverrideCompiler compiler, BTPTextureEntry btpEntry, Stream btpStream, IMEPackage package, IMEPackage metadataPackage = null)
+        public void Serialize(TextureOverrideCompiler compiler, BTPTextureEntry btpEntry, Stream btpStream, ILazyLoadPackage package, IMEPackage metadataPackage)
         {
             // Find texture package
             //var packagePath = Path.Combine(sourceFolder, CompilingSourcePackage);
@@ -268,12 +268,13 @@ namespace ME3TweaksCore.TextureOverride
             }
 
 
-            if (metadataPackage != null)
-            {
-                // Write out metadata - texture export, stubbed
-                texture.WriteBinary([]); // Hope this works...
-                EntryExporter.ExportExportToPackage(texture, package, out _);
-            }
+            // Write out metadata - texture export, then truncate it;
+            var rop = new RelinkerOptionsPackage() { CheckImportsWhenExportingToPackage = false };
+            EntryExporter.ExportExportToPackage(texture, metadataPackage, out var ported, customROP: rop);
+            (ported as ExportEntry).WriteBinary([]);
+
+            // Unload the export to reduce memory usage
+            package.UnloadExport(texture);
         }
     }
 }

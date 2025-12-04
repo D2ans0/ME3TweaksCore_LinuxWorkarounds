@@ -1,19 +1,21 @@
 ﻿using LegendaryExplorerCore.Compression;
-using LegendaryExplorerCore.Gammtek.IO;
+using LegendaryExplorerCore.Gammtek.Extensions.Collections.Generic;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
+using LegendaryExplorerCore.Packages.CloningImportingAndRelinking;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.Classes;
+using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Objects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Hashing;
 using System.Linq;
-using System.Text;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -290,7 +292,7 @@ namespace ME3TweaksCore.TextureOverride
             // Deserialize texture table
 
             uint textureCount = Header.TextureCount;
-            
+
             btpStream.Seek(textureTableStart, SeekOrigin.Begin);
             TextureOverrides = new List<BTPTextureEntry>((int)Header.TextureCount);
             for (var i = 0; i < Header.TextureCount; i++)
@@ -301,6 +303,143 @@ namespace ME3TweaksCore.TextureOverride
                 var btpOverride = new BTPTextureEntry(this, btpStream);
                 TextureOverrides.Add(btpOverride);
             }
+        }
+
+        /// <summary>
+        /// Given a matching metadata file, reconstitute source packages from this BTP.
+        /// </summary>
+        /// <param name="inMetadataFile">Input metadata file</param>
+        /// <param name="outFolder">Directory to output files to</param>
+        public void ReconstituteSource(Stream btpStream, string inMetadataFile, string outFolder)
+        {
+            MLog.Information($@"BTP RECONSTITUTION: Rebuild package files from BTP with metadata file {inMetadataFile}");
+
+            var crc = Crc32.HashToUInt32(File.ReadAllBytes(inMetadataFile));
+            if (crc != Header.MetadataCRC)
+            {
+                MLog.Error($@"BTP RECONSTITUTION: The given metadata file was not generated for this BTP: Expected {Header.MetadataCRC:X8}, got {crc:X8}");
+                throw new Exception($"The metadata file {inMetadataFile} is not for this BTP file.");
+            }
+
+            // CRC matches
+            using var metadataPackage = MEPackageHandler.UnsafeLazyLoad(inMetadataFile);
+            var largeDataSerializer = new LargePackageChunkedSerializer()
+            {
+                game = metadataPackage.Game,
+                basePackageName = $@"TO_TexturePackage",
+                baseSavePath = outFolder
+            };
+
+            var textures = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D")).ToList();
+            var cache = new PackageCache();
+            MLog.Information($@"BTP RECONSTITUTION: Beginning rebuild of {textures.Count} textures");
+
+            // Do all texture cubes first, so they appear in the first package.
+            var textureCubeLoadList = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D") && x.Parent.IsA(@"TextureCube")).ToList();
+            if (textureCubeLoadList.Count > 0)
+            {
+                MLog.Information($@"BTP RECONSTITUTION: Rebuilding texture cubes");
+                MLog.Information($@"BTP RECONSTITUTION: Temporarily raising serializer limit to ensure texture cubes serialize");
+                var originalSize = largeDataSerializer.MaxSize;
+                largeDataSerializer.MaxSize = (int)(FileSize.GibiByte * 1.5);
+
+                // Load objects.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    metadataPackage.LoadExport(subCubeTexture, true);
+                }
+
+                // Now port the textures that are part of cubes.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    largeDataSerializer.ExportInto(subCubeTexture, cache);
+                }
+
+                MLog.Information($@"BTP RECONSTITUTION: Resetting serializer limit");
+                largeDataSerializer.MaxSize = originalSize;
+                MLog.Information($@"BTP RECONSTITUTION: Rebuilding texture cubes complete");
+
+                // Unload objects.
+                foreach (var subCubeTexture in textureCubeLoadList)
+                {
+                    metadataPackage.UnloadExport(subCubeTexture, true);
+                }
+            }
+
+            // Now port normal textures
+            // TO packages will never have textures at the root! So we purposely don't check for that here.
+            foreach (var exp in textures.Where(x => !x.Parent.IsA("TextureCube")))
+            {
+                metadataPackage.LoadExport(exp, true); // Load parents too.
+                ReconstituteTexture(btpStream, exp);
+                largeDataSerializer.ExportInto(exp, cache);
+                metadataPackage.UnloadExport(exp); // Parents should just be packages so just leave them loaded.
+            }
+
+            largeDataSerializer.Finish();
+            MLog.Information($@"BTP RECONSTITUTION: Rebuild complete.");
+        }
+
+        /// <summary>
+        /// Generates the texture binary from this BTP for the given export
+        /// </summary>
+        /// <param name="btpStream">Data stream we can access mip data from</param>
+        /// <param name="exp">Export to reconstitute</param>
+        private void ReconstituteTexture(Stream btpStream, ExportEntry exp)
+        {
+            // Find the matching entry
+            var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath == exp.InstancedFullPath); // Should be IFP matching in the TO
+
+            // Create T2D
+            var texture2D = UTexture2D.Create();
+            // Now fill out the mips
+            int count = matchingEntry.PopulatedMipCount;
+            foreach (var btpMip in matchingEntry.Mips)
+            {
+                count--;
+                if (count < 0)
+                {
+                    // No more mips
+                    break;
+                }
+
+                var mip = new UTexture2D.Texture2DMipMap();
+                mip.UncompressedSize = btpMip.UncompressedSize;
+                mip.CompressedSize = btpMip.CompressedSize;
+                mip.SizeX = btpMip.Width;
+                mip.SizeY = btpMip.Height;
+                mip.DataOffset = (int)btpMip.CompressedOffset;
+                if (btpMip.Flags.HasFlag(BTPMipFlags.External))
+                {
+                    // It is stored externally.
+                    mip.StorageType = StorageTypes.extOodle;
+                    mip.Mip = [];
+                }
+                else
+                {
+                    // It is stored locally in the package
+                    mip.StorageType = StorageTypes.pccUnc;
+                    // Load mip data from the BTP
+                    btpStream.Seek(btpMip.CompressedOffset, SeekOrigin.Begin);
+                    mip.Mip = btpStream.ReadToBuffer(btpMip.CompressedSize);
+                    if (btpMip.Flags.HasFlag(BTPMipFlags.OodleCompressed))
+                    {
+                        // The mip data is compressed and needs decompressed for package storage
+                        var mipBuffer = new byte[btpMip.UncompressedSize];
+                        OodleHelper.Decompress(mip.Mip, mipBuffer);
+                        mip.Mip = mipBuffer;
+                        mip.CompressedSize = mip.UncompressedSize;
+                    }
+                }
+
+                texture2D.Mips.Add(mip);
+            }
+
+            exp.WriteBinary(texture2D);
+
+#if DEBUG
+            var test2d = ObjectBinary.From<UTexture2D>(exp);
+#endif
         }
     }
 
@@ -538,7 +677,7 @@ namespace ME3TweaksCore.TextureOverride
             btpStream.WriteByte(PopulatedMipCount);
 
             // Write out all 13 mip header structs now, from largest to smallest
-            for(int i = 0; i < Mips.Count; i++)
+            for (int i = 0; i < Mips.Count; i++)
             {
                 var mip = Mips[i];
                 mip.Serialize(btpStream, i >= PopulatedMipCount);
@@ -802,6 +941,16 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     throw new Exception(@"Deserializer for mip reports 0 Width/Height!");
                 }
+
+                if (Width > 8192 || Width < 0)
+                {
+                    throw new Exception($@"Deserializer for mip reports width out of bounds: {Width}");
+                }
+
+                if (Height > 8192 || Height < 0)
+                {
+                    throw new Exception($@"Deserializer for mip reports height out of bounds: {Height}");
+                }
             }
 #endif
 
@@ -812,7 +961,8 @@ namespace ME3TweaksCore.TextureOverride
                 // you must check for oodle compression flag.
                 var mipEntryEnd = btpStream.Position;
                 btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
-                if (btpStream.Position + CompressedSize > btpStream.Length) {
+                if (btpStream.Position + CompressedSize > btpStream.Length)
+                {
                     throw new Exception(@"The requested mip data is out of bounds of the BTP stream! We are overreading");
                 }
                 var data = Data = btpStream.ReadToBuffer(CompressedSize);
