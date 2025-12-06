@@ -1,0 +1,179 @@
+﻿using LegendaryExplorerCore.Packages;
+using ME3TweaksCore.Diagnostics.Support;
+using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Localization;
+using ME3TweaksCore.NativeMods;
+using ME3TweaksCore.NativeMods.Interfaces;
+using ME3TweaksCore.Targets;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+namespace ME3TweaksCore.Diagnostics.Modules
+{
+    internal class DiagASIInfo : DiagModuleBase
+    {
+        // ASIs began changing over to .log 03/17/2022
+        // KismetLogger uses .txt still (we don't care)
+        private static readonly string[] asilogExtensions = [@".log"];
+
+        internal override void RunModule(LogUploadPackage package)
+        {
+            var diag = package.DiagnosticWriter;
+
+            MLog.Information(@"Collecting ASI mod information");
+
+            #region ASI File Information
+            package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingASIFileInformation));
+
+            string asidir = M3Directories.GetASIPath(package.DiagnosticTarget);
+            diag.AddDiagLine(@"Installed ASI mods", LogSeverity.DIAGSECTION);
+            if (Directory.Exists(asidir))
+            {
+                diag.AddDiagLine(@"The following ASI files are located in the ASI directory:");
+                string[] files = Directory.GetFiles(asidir, @"*.asi");
+                if (!files.Any())
+                {
+                    diag.AddDiagLine(@"ASI directory is empty. No ASI mods are installed.");
+                }
+                else
+                {
+                    var installedASIs = package.DiagnosticTarget.GetInstalledASIs();
+                    var nonUniqueItems = installedASIs.OfType<KnownInstalledASIMod>().SelectMany(
+                        x => installedASIs.OfType<IKnownInstalledASIMod>().Where(
+                            y => x != y
+                                 && x.AssociatedManifestItem.OwningMod ==
+                                 y.AssociatedManifestItem.OwningMod)
+                        ).Distinct().ToList();
+
+                    foreach (var knownAsiMod in installedASIs.OfType<IKnownInstalledASIMod>().Except(nonUniqueItems))
+                    {
+                        var str = $@" - {knownAsiMod.AssociatedManifestItem.Name} v{knownAsiMod.AssociatedManifestItem.Version} ({Path.GetFileName(knownAsiMod.InstalledPath)})";
+                        if (knownAsiMod.Outdated)
+                        {
+                            str += @" - Outdated";
+                        }
+                        diag.AddDiagLine(str, knownAsiMod.Outdated ? LogSeverity.WARN : LogSeverity.GOOD);
+                    }
+
+                    foreach (var unknownAsiMod in installedASIs.OfType<IUnknownInstalledASIMod>())
+                    {
+                        diag.AddDiagLine($@" - {Path.GetFileName(unknownAsiMod.InstalledPath)} - Unknown ASI mod", LogSeverity.WARN);
+                    }
+
+                    foreach (var duplicateItem in nonUniqueItems)
+                    {
+                        var str = $@" - {duplicateItem.AssociatedManifestItem.Name} v{duplicateItem.AssociatedManifestItem.Version} ({Path.GetFileName(duplicateItem.InstalledPath)})";
+                        if (duplicateItem.Outdated)
+                        {
+                            str += @" - Outdated";
+                        }
+
+                        str += @" - DUPLICATE ASI";
+                        diag.AddDiagLine(str, LogSeverity.FATAL);
+                    }
+
+                    diag.AddDiagLine();
+                    diag.AddDiagLine(@"Ensure that only one version of an ASI is installed. If multiple copies of the same one are installed, the game may crash on startup.");
+                }
+            }
+            else
+            {
+                diag.AddDiagLine(@"ASI directory does not exist. No ASI mods are installed.");
+            }
+
+            #endregion
+
+            #region ASI Logs
+            if (package.DiagnosticTarget.Game.IsLEGame())
+            {
+                MLog.Information(@"Collecting ASI log files");
+                package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingASILogFiles));
+
+                var logFiles = GetASILogs(package.DiagnosticTarget);
+                diag.AddDiagLine(@"ASI log files", LogSeverity.DIAGSECTION);
+                diag.AddDiagLine(@"These are log files from installed ASI mods (within the past day). These are >>highly<< technical; only advanced developers should attempt to interpret these logs.");
+                if (logFiles.Any())
+                {
+                    foreach (var logF in logFiles)
+                    {
+                        diag.AddDiagLine(logF.Key, LogSeverity.BOLD);
+                        diag.AddDiagLine(@"Click to view log", LogSeverity.SUB);
+                        diag.AddDiagLine(logF.Value);
+                        diag.AddDiagLine(LogShared.END_SUB);
+                    }
+                }
+                else
+                {
+                    diag.AddDiagLine(@"No recent ASI logs were found.");
+                }
+            }
+            #endregion
+        }
+
+        /// <summary>
+        /// Gets the contents of log files in the same directory as the game executable. This only returns logs for LE, OT doesn't really have any debug loggers beyond one.
+        /// </summary>
+        /// <returns>Dictionary of logs, mapped filename to contents. Will return null if not an LE game</returns>
+        private static Dictionary<string, string> GetASILogs(GameTarget target)
+        {
+            if (!target.Game.IsLEGame()) return null;
+            var logs = new Dictionary<string, string>();
+            var directory = target.GetExecutableDirectory();
+            if (Directory.Exists(directory))
+            {
+                foreach (var f in Directory.GetFiles(directory, "*"))
+                {
+                    try
+                    {
+                        if (!asilogExtensions.Contains(Path.GetExtension(f)))
+                            continue; // Not parsable
+
+                        var fi = new FileInfo(f);
+                        var timeDelta = DateTime.Now - fi.LastWriteTime;
+                        if (timeDelta < TimeSpan.FromDays(1))
+                        {
+                            // If the log was written within the last day.
+                            StringBuilder sb = new StringBuilder();
+                            var fileContentsLines = File.ReadAllLines(f);
+
+                            int lastIndexRead = 0;
+                            // Read first 30 lines.
+                            for (int i = 0; i < 30 && i < fileContentsLines.Length - 1; i++)
+                            {
+                                sb.AppendLine(fileContentsLines[i]);
+                                lastIndexRead = i;
+                            }
+
+                            // Read last 30 lines.
+                            if (lastIndexRead < fileContentsLines.Length - 1)
+                            {
+                                sb.AppendLine(@"...");
+                                var startIndex = Math.Max(lastIndexRead, fileContentsLines.Length - 30);
+                                for (int i = startIndex; i < fileContentsLines.Length - 1; i++)
+                                {
+                                    sb.AppendLine(fileContentsLines[i]);
+                                }
+                            }
+
+                            logs[Path.GetFileName(f)] = sb.ToString();
+                        }
+                        else
+                        {
+                            MLog.Information($@"Skipping log: {Path.GetFileName(f)}. Last write time was {fi.LastWriteTime}. Only files written within last day are included");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logs[Path.GetFileName(f)] = e.Message;
+                    }
+                }
+            }
+
+            return logs;
+        }
+
+    }
+}
