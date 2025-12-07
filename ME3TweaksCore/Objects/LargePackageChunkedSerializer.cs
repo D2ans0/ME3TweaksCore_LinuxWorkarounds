@@ -55,6 +55,11 @@ namespace ME3TweaksCore.Objects
         /// </summary>
         public IReadOnlyList<string> PackagePaths => packagePaths;
 
+        /// <summary>
+        /// Delegate to invoke before save occurs
+        /// </summary>
+        public Action<IMEPackage> OnSave { get; init; }
+
         public IEntry ExportInto(ExportEntry source, PackageCache cache)
         {
             if (currentPackage == null || (source.DataSize + currentDataSize) > MaxSize)
@@ -76,6 +81,7 @@ namespace ME3TweaksCore.Objects
             if (currentPackage != null)
             {
                 MLog.Information($@"Large data serializer - saving package...");
+                OnSave?.Invoke(currentPackage);
                 currentPackage.Save();
                 packagePaths.Add(currentPackage.FilePath);
             }
@@ -97,6 +103,7 @@ namespace ME3TweaksCore.Objects
             MLog.Information($@"Large data serializer - finalizing");
             if (currentPackage != null)
             {
+                OnSave?.Invoke(currentPackage);
                 currentPackage.Save();
                 packagePaths.Add(currentPackage.FilePath);
             }

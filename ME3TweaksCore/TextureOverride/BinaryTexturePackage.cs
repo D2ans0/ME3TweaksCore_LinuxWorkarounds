@@ -231,8 +231,8 @@ namespace ME3TweaksCore.TextureOverride
 
 
         // LAYOUT ==================
-        internal BTPHeader Header;
-        internal List<BTPTextureEntry> TextureOverrides;
+        public BTPHeader Header;
+        public List<BTPTextureEntry> TextureOverrides;
         // Mips are referenced by TextureOverrides
         internal BTPTFCTable TFCTable;
 
@@ -475,7 +475,7 @@ namespace ME3TweaksCore.TextureOverride
     /// <summary>
     /// Header for BTP file
     /// </summary>
-    class BTPHeader
+    public class BTPHeader
     {
         /// <summary>
         /// Magic for BTP

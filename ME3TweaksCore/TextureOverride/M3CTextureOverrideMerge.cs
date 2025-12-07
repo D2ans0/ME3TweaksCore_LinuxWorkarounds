@@ -17,6 +17,11 @@ namespace ME3TweaksCore.TextureOverride
     public class M3CTextureOverrideMerge
     {
         /// <summary>
+        /// Name of BTP file in a DLC mod that is loaded by the ASI
+        /// </summary>
+        public const string COMBINED_BTP_FILENAME = $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}";
+
+        /// <summary>
         /// Gets path to BTP for given target and DLC name
         /// </summary>
         /// <param name="target"></param>
@@ -24,8 +29,14 @@ namespace ME3TweaksCore.TextureOverride
         /// <returns></returns>
         public static string GetCombinedTexturePackagePath(GameTarget target, string dlcFolderName)
         {
-            return Path.Combine(target.GetDLCPath(), dlcFolderName, $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
+            return Path.Combine(target.GetDLCPath(), dlcFolderName, COMBINED_BTP_FILENAME);
         }
+
+        /// <summary>
+        /// Name of BTP metadata file in a DLC mod
+        /// </summary>
+        public const string BTP_METADATA_FILENAME = $@"BTPMetadata.btm";
+
 
         /// <summary>
         /// Gets path to BTP metadata for given target and DLC name
@@ -35,7 +46,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <returns></returns>
         public static string GetBTPMetadataPath(GameTarget target, string dlcFolderName)
         {
-            return Path.Combine(target.GetDLCPath(), dlcFolderName, $@"BTPMetadata.btm");
+            return Path.Combine(target.GetDLCPath(), dlcFolderName, BTP_METADATA_FILENAME);
         }
 
         /// <summary>
