@@ -88,8 +88,8 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 package.UpdateProgressCallback?.Invoke(progress);
             });
 
-            sw.Stop();
 #if DEBUG
+            sw.Stop();
             MLog.Information($@"Decompression test took {sw.ElapsedMilliseconds}ms");
 #endif
 
