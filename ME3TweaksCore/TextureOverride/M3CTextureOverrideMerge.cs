@@ -4,6 +4,7 @@ using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Objects;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,23 +27,29 @@ namespace ME3TweaksCore.TextureOverride
             return Path.Combine(target.GetDLCPath(), dlcFolderName, $@"CombinedTextureOverrides{BinaryTexturePackage.EXTENSION_TEXTURE_OVERRIDE_BINARY}");
         }
 
-
-        // One consideration: Delete the texture packages in the DLC after merge is complete
-        // This way we don't store redundant data in the DLC cooked folder as these aren't used by game
-        // Probably will require some changes to installer or something... ugh
+        /// <summary>
+        /// Gets path to BTP metadata for given target and DLC name
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="dlcFolderName"></param>
+        /// <returns></returns>
+        public static string GetBTPMetadataPath(GameTarget target, string dlcFolderName)
+        {
+            return Path.Combine(target.GetDLCPath(), dlcFolderName, $@"BTPMetadata.btm");
+        }
 
         /// <summary>
         /// Performs a texture merge on the given game's DLC folder, on the given DLC
         /// </summary>
         /// <param name="target">Target we are merging</param>
         /// <param name="dlcFolderName">Name of the DLC folder we are merging on</param>
-        public static void PerformDLCMerge(GameTarget target, string dlcFolderName, ProgressInfo pi = null)
+        public static string PerformDLCMerge(GameTarget target, string dlcFolderName, ProgressInfo pi = null)
         {
             var cookedDir = Path.Combine(target.GetDLCPath(), dlcFolderName, target.Game.CookedDirName());
             if (!Directory.Exists(cookedDir))
             {
                 MLog.Error($@"Cannot TextureOverride DLC merge {dlcFolderName}, cooked directory doesn't exist: {cookedDir}");
-                return; // Cannot asset merge
+                return null; // Cannot merge, just ignore this folder
             }
 
             var m3tos = Directory.GetFiles(cookedDir, @"*" + TextureOverrideManifest.EXTENSION_TEXTURE_OVERRIDE_MANIFEST, SearchOption.TopDirectoryOnly);
@@ -61,24 +68,68 @@ namespace ME3TweaksCore.TextureOverride
                 MLog.Information($@"Merging M3 Texture Override {m3to} in {dlcFolderName}");
                 var manifestText = File.ReadAllText(m3to);
                 var manifest = JsonConvert.DeserializeObject<TextureOverrideManifest>(manifestText);
-                if (manifest.Game != target.Game)
+
+                try
                 {
-                    MLog.Error($@"Texture Override manifest game mismatch in {m3to} (file targets {manifest.Game}, we are merging {target.Game}), skipping this file.");
-                    continue;
+                    if (!manifest.Verify(Path.GetFileName(m3to), target.Game, true))
+                    {
+                        // no throw but false is skipped.
+                        continue;
+                    }
+                    manifest.MergeInto(combinedManifest);
                 }
-                var errorText = manifest.MergeInto(combinedManifest);
+                catch (Exception ex)
+                {
+                    // Bubble up the error message
+                    return ex.Message;
+                }
+
+                // Generate the binary package
+                if (combinedManifest.Textures.Count > 0)
+                {
+                    pi?.Status = "Building texture override package";
+                    pi?.Value = 0;
+                    pi?.OnUpdate(pi);
+                    try
+                    {
+                        combinedManifest.CompileBinaryTexturePackage(target, dlcFolderName, pi);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Remove this file cause it could crash game if left around
+                        var binPath = GetCombinedTexturePackagePath(target, dlcFolderName);
+                        if (File.Exists(binPath))
+                        {
+                            File.Delete(binPath);
+                        }
+
+                        var metadataPath = GetBTPMetadataPath(target, dlcFolderName);
+                        if (File.Exists(metadataPath))
+                        {
+                            File.Delete(metadataPath);
+                        }
+
+                        // Bubble up the error message
+                        return ex.Message;
+                    }
+                    // Now delete TO_ packages, as we don't want them clogging up the game.
+                    var toFiles = Directory.GetFiles(cookedDir, @"TO_*.pcc", SearchOption.AllDirectories);
+                    foreach (var tof in toFiles)
+                    {
+                        try
+                        {
+                            MLog.Information($"Deleting texture override file from game: {tof}");
+                            File.Delete(tof);
+                        }
+                        catch (Exception e)
+                        {
+                            MLog.Error($@"Unable to delete TO_ file after merge: {tof}");
+                        }
+                    }
+                }
             }
 
-            // Generate the binary package
-            if (combinedManifest.Textures.Count > 0)
-            {
-                pi?.Status = "Building texture override package";
-                pi?.Value = 0;
-                pi?.OnUpdate(pi);
-                var binPath = GetCombinedTexturePackagePath(target, dlcFolderName);
-                MLog.Information($@"Compiling M3 Texture Override binary package {binPath} for DLC {dlcFolderName}");
-                combinedManifest.CompileBinaryTexturePackage(cookedDir, binPath, dlcFolderName, pi);
-            }
+            return null;
         }
     }
 }

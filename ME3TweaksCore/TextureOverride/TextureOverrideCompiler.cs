@@ -14,6 +14,7 @@ using System.IO.Hashing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -138,10 +139,15 @@ namespace ME3TweaksCore.TextureOverride
                 {
                     // Load new source package
                     var newPath = Path.Combine(sourceFolder, texture.CompilingSourcePackage);
+                    if (!File.Exists(newPath))
+                    {
+                        MLog.Error($@"Referenced source package {newPath} not found at {newPath} - aborting BTP build");
+                        throw new Exception($"sourcepackage '{texture.CompilingSourcePackage}' for texture '{texture.TextureIFP}' does not exist, BTP cannot be compiled.");
+                    }
+
                     MLog.Information($@"BTP build: Switching to new source package {newPath}");
                     currentSourcePackage?.Dispose(); // Dispose any existing package to lose the stream
                     currentSourcePackage = MEPackageHandler.UnsafeLazyLoad(newPath);
-                    LoadObjects(currentSourcePackage, tom);
 
                     // Dump old package.
                     GC.Collect();
@@ -186,35 +192,10 @@ namespace ME3TweaksCore.TextureOverride
             pi?.Status = @"Verifying BTP";
             pi?.Value = 0;
             pi?.OnUpdate(pi);
-            var verifyBTP = new BinaryTexturePackage(btpStream, true, pi);
+            var verifyBTP = new BinaryTexturePackage(btpStream, true, true, pi);
 #endif
 
             btpStream.Close();
-        }
-
-        /// <summary>
-        /// Loads specific objects in the given package for transfer to BTP
-        /// </summary>
-        /// <param name="currentSourcePackage"></param>
-        private void LoadObjects(ILazyLoadPackage currentSourcePackage, TextureOverrideManifest tom)
-        {
-            foreach(var x in currentSourcePackage.Exports.Where(x=>x.IsA(@"Texture2D")))
-            {
-                var ifp = x.MemoryFullPath;
-                var matches = tom.Textures.Any(entry =>
-                {
-                    if (entry.MemoryPath != null)
-                    {
-                        return entry.MemoryPath.CaseInsensitiveEquals(ifp);
-                    }
-                    return entry.TextureIFP.CaseInsensitiveEquals(ifp);
-                });
-
-                if (matches)
-                {
-                    currentSourcePackage.LoadExport(x, true);
-                }
-            }
         }
 
         /// <summary>
@@ -244,13 +225,26 @@ namespace ME3TweaksCore.TextureOverride
             existingMap[i] = serializationInfo;
         }
 
-        private void PrepareTextureCompression(IMEPackage currentSourcePackage)
+
+        /// <summary>
+        /// This method enumerates textures in the target package and compresses their mips with Oodle compression in parallel for performance
+        /// </summary>
+        /// <param name="currentSourcePackage"></param>
+        private void PrepareTextureCompression(ILazyLoadPackage currentSourcePackage)
         {
             // For every loaded object...
             var loadedItems = currentSourcePackage.Exports.Where(IsBTPTexture);
+            var textureLoadObj = new Lock();
             Parallel.ForEach(loadedItems, new ParallelOptions() { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount - 2, 1, 6) }, texture =>
             {
                 var compressedAny = false;
+                if (!texture.IsDataLoaded())
+                {
+                    lock (textureLoadObj)
+                    {
+                        currentSourcePackage.LoadExport(texture);
+                    }
+                }
                 var texBin = ObjectBinary.From<UTexture2D>(texture);
                 for (int i = 0; i < texBin.Mips.Count; i++)
                 {

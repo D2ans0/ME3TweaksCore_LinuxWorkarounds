@@ -1,5 +1,6 @@
 ﻿using LegendaryExplorerCore.Compression;
 using LegendaryExplorerCore.Gammtek.Extensions.Collections.Generic;
+using LegendaryExplorerCore.Gammtek.IO;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
@@ -208,14 +209,20 @@ namespace ME3TweaksCore.TextureOverride
         public const string EXTENSION_TEXTURE_OVERRIDE_BINARY = @".btp";
 
         /// <summary>
-        /// The current version when serializing
+        /// The current supported version when serializing
         /// </summary>
         public const ushort CURRENT_VERSION = 2;
 
         /// <summary>
-        /// Flags to indicate that mips should be loaded on deserialization
+        /// Flags to indicate that mips should be loaded on deserialization and populated into mips
         /// </summary>
         public bool LoadMips { get; internal set; }
+
+        /// <summary>
+        /// If while loading mips, we should discard the result, as we are only testing the mips can load,
+        /// not that we care about the data. Requires LoadMips be true
+        /// </summary>
+        internal bool Verify { get; set; }
 
         /// <summary>
         /// If we are performing final serialization
@@ -234,10 +241,11 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="btpStream"></param>
         /// <param name="loadMips">If mip data should be also loaded. This can use a lot of memory.</param>
-        public BinaryTexturePackage(Stream btpStream, bool loadMips = false, ProgressInfo pi = null)
+        public BinaryTexturePackage(Stream btpStream, bool loadMips = false, bool verify = false, ProgressInfo pi = null)
         {
             if (btpStream != null)
             {
+                Verify = verify;
                 LoadMips = loadMips;
                 Deserialize(btpStream, pi);
             }
@@ -284,6 +292,11 @@ namespace ME3TweaksCore.TextureOverride
         {
             Header = new BTPHeader(this, btpStream);
             var textureTableStart = btpStream.Position;
+
+            if (Header.Version > CURRENT_VERSION)
+            {
+                throw new Exception($@"BTP version {Header.Version} is not supported by this build, the highest supported version is {CURRENT_VERSION}");
+            }
 
             // First we must deserialize tfc table/map
             btpStream.Seek((long)Header.TFCTableOffset, SeekOrigin.Begin);
@@ -736,7 +749,11 @@ namespace ME3TweaksCore.TextureOverride
             OverridePath = btpStream.ReadStringUnicodeNull();
             btpStream.Seek(EntryOffset + ((OVERRIDE_PATH_MAX_CHARS + 1) * 2), SeekOrigin.Begin); // +1 for null terminator
             var tfcTableIndex = btpStream.ReadInt32();
-            TFC = Owner.TFCTable.TFCTable.Values.First(x => x.TableIndex == tfcTableIndex);
+            TFC = Owner.TFCTable.TFCTable.Values.FirstOrDefault(x => x.TableIndex == tfcTableIndex);
+            if (TFC == null)
+            {
+                throw new Exception($@"Invalid TFC table index in BTP: {tfcTableIndex}");
+            }
             Format = (BTPPixelFormat)btpStream.ReadInt32();
             bSRGB = btpStream.ReadBoolByte();
             InternalFormatLODBias = btpStream.ReadByte();
@@ -971,28 +988,40 @@ namespace ME3TweaksCore.TextureOverride
 
             if (!isUnused && Owner.Owner.LoadMips && (Flags & BTPMipFlags.External) == 0)
             {
-                // Local stored mip
-                // To use it's data as a texture
-                // you must check for oodle compression flag.
-                var mipEntryEnd = btpStream.Position;
-                btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
-                if (btpStream.Position + CompressedSize > btpStream.Length)
+                var data = LoadData(btpStream);
+                // If not in verify mode, set the mip data value
+                if (!Owner.Owner.Verify)
                 {
-                    throw new Exception(@"The requested mip data is out of bounds of the BTP stream! We are overreading");
+                    Data = data;
                 }
-                var data = Data = btpStream.ReadToBuffer(CompressedSize);
-
-                // Verify decompression
-                byte[] decompressedData = null;
-                if ((Flags & BTPMipFlags.OodleCompressed) != 0)
-                {
-                    decompressedData = new byte[UncompressedSize];
-                    OodleHelper.Decompress(data, decompressedData);
-                }
-
-                // Return
-                btpStream.Seek(mipEntryEnd, SeekOrigin.Begin);
             }
+        }
+
+        private byte[] LoadData(Stream btpStream)
+        {
+            // Local stored mip
+            // To use it's data as a texture
+            // you must check for oodle compression flag.
+            var mipEntryEnd = btpStream.Position;
+            btpStream.Seek(CompressedOffset, SeekOrigin.Begin);
+            if (btpStream.Position + CompressedSize > btpStream.Length)
+            {
+                throw new Exception($@"The requested mip data is out of bounds of the BTP file. BTP Size: {btpStream.Length}, Requested Offset {CompressedOffset}, Requested size: {CompressedSize}");
+            }
+            var data = Data = btpStream.ReadToBuffer(CompressedSize);
+
+            // Verify decompression
+            byte[] decompressedData = null;
+            if ((Flags & BTPMipFlags.OodleCompressed) != 0)
+            {
+                decompressedData = new byte[UncompressedSize];
+                OodleHelper.Decompress(data, decompressedData);
+            }
+
+            // Return
+            btpStream.Seek(mipEntryEnd, SeekOrigin.Begin);
+
+            return decompressedData;
         }
     }
 

@@ -50,12 +50,6 @@ namespace ME3TweaksCore.TextureOverride
         [JsonProperty("textureifp")]
         public string TextureIFP { get; set; }
 
-        /// <summary>
-        /// OPTIONAL - The path of the texture in memory, in the event it has a different path than the package (due to non-seek free).
-        /// </summary>
-        [JsonProperty("memorypath", NullValueHandling = NullValueHandling.Ignore)]
-        public string MemoryPath { get; set; }
-
         // SERIALIZATION =========================================================
 
         /// <summary>
@@ -103,7 +97,7 @@ namespace ME3TweaksCore.TextureOverride
             var srgb = props.GetProp<BoolProperty>(@"sRGB")?.Value ?? true; // Default is true on Texture class
 
             // Set values on the btpEntry
-            btpEntry.OverridePath = MemoryPath ?? TextureIFP;
+            btpEntry.OverridePath = TextureIFP;
             btpEntry.PopulatedMipCount = (byte)numPopulatedMips;
             btpEntry.InternalFormatLODBias = lodBias;
             btpEntry.NeverStream = neverStream;
@@ -268,8 +262,12 @@ namespace ME3TweaksCore.TextureOverride
                 }
             }
 
+            // Ensure parents are loaded for metadata export
+            package.LoadExport(texture, true);
 
             // Write out metadata - texture export, then truncate it;
+
+
             var rop = new RelinkerOptionsPackage() { CheckImportsWhenExportingToPackage = false };
             EntryExporter.ExportExportToPackage(texture, metadataPackage, out var ported, customROP: rop);
             if (texBin is LightMapTexture2D lm2d)
