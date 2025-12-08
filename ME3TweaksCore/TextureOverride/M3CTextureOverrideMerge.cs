@@ -54,7 +54,7 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         /// <param name="target">Target we are merging</param>
         /// <param name="dlcFolderName">Name of the DLC folder we are merging on</param>
-        public static string PerformDLCMerge(GameTarget target, string dlcFolderName, ProgressInfo pi = null)
+        public static string PerformDLCMerge(GameTarget target, string dlcFolderName, bool deleteTOFiles, ProgressInfo pi = null)
         {
             var cookedDir = Path.Combine(target.GetDLCPath(), dlcFolderName, target.Game.CookedDirName());
             if (!Directory.Exists(cookedDir))
@@ -124,17 +124,20 @@ namespace ME3TweaksCore.TextureOverride
                         return ex.Message;
                     }
                     // Now delete TO_ packages, as we don't want them clogging up the game.
-                    var toFiles = Directory.GetFiles(cookedDir, @"TO_*.pcc", SearchOption.AllDirectories);
-                    foreach (var tof in toFiles)
+                    if (deleteTOFiles)
                     {
-                        try
+                        var toFiles = Directory.GetFiles(cookedDir, @"TO_*.pcc", SearchOption.AllDirectories);
+                        foreach (var tof in toFiles)
                         {
-                            MLog.Information($"Deleting texture override file from game: {tof}");
-                            File.Delete(tof);
-                        }
-                        catch (Exception e)
-                        {
-                            MLog.Error($@"Unable to delete TO_ file after merge: {tof}");
+                            try
+                            {
+                                MLog.Information($"Deleting texture override file from game: {tof}");
+                                File.Delete(tof);
+                            }
+                            catch (Exception e)
+                            {
+                                MLog.Error($@"Unable to delete TO_ file after merge: {tof}");
+                            }
                         }
                     }
                 }
