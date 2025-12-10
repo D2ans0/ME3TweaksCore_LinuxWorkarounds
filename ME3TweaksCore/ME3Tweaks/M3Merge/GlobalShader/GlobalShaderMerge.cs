@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LegendaryExplorerCore.GameFilesystem;
@@ -7,6 +8,7 @@ using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Services.Backup;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
 using ME3TweaksCore.Targets;
@@ -19,18 +21,27 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
     public class GlobalShaderMerge
     {
         private static string SHADER_MERGE_PATTERN = @"GlobalShader-*.m3gs";
+        private record GSMFileInfo(string hash, uint size);
+
+        /// <summary>
+        /// Map of information about the global shader cache for each game
+        /// </summary>
+        private static Dictionary<MEGame, GSMFileInfo> ShaderFileMap = new() {
+            { MEGame.LE1, new GSMFileInfo("", 0) },
+            { MEGame.LE2, new GSMFileInfo("", 0) },
+            { MEGame.LE3, new GSMFileInfo("", 0) },
+        };
 
         public static bool RunShaderMerge(GameTarget target, bool log)
         {
             MLog.Information($@"Performing Shader Merge for game: {target.TargetPath}");
-            var backup = BackupService.GetGameBackupPath(target.Game);
-            if (backup == null)
+            var globalShaderCacheF = GetVanillaGlobalShaderCache(target);
+            if (globalShaderCacheF == null)
             {
-                MLog.Warning("Backup not available; cannot perform GlobalShaderCache merge. Skipping.");
+                MLog.Warning($@"Could not source a vanilla copy of the Global Shader Cache. Cannot perform Shader Merge, skipping.");
                 return false;
             }
 
-            var globalShaderCacheF = Path.Combine(backup, "BioGame", "CookedPCConsole", "GlobalShaderCache-PC-D3D-SM5.bin");
             using var fs = File.OpenRead(globalShaderCacheF);
             var globalShaderCache = GlobalShaderCache.ReadGlobalShaderCache(fs, target.Game);
             var shaders = globalShaderCache.Shaders.Values.ToList();
@@ -56,10 +67,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
 
                 var dlcCookedPath = Path.Combine(target.GetDLCPath(), dlc, target.Game.CookedDirName());
 
-                MLog.Information($@"Looking for GlobalShader-*.m3gs files in {dlcCookedPath}", log);
+                MLog.Debug($@"Looking for {SHADER_MERGE_PATTERN} files in {dlcCookedPath}", log);
                 var globalShaders = Directory.GetFiles(dlcCookedPath, GlobalShaderMerge.SHADER_MERGE_PATTERN, SearchOption.TopDirectoryOnly)
                     .ToList();
-                MLog.Information($@"Found {globalShaders.Count} m3gs files to apply", log);
+                if (globalShaders.Count > 0)
+                {
+                    MLog.Information($@"Found {globalShaders.Count} m3gs files to apply", log);
+                }
 
                 foreach (var gs in globalShaders)
                 {
@@ -97,10 +111,110 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             }
             else
             {
+                // Just copy the file instead.
                 File.Copy(globalShaderCacheF, outF, true);
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Tries to source a vanilla global shader cache
+        /// </summary>
+        /// <returns>Path to a vanilla file, or null if none could be found.</returns>
+        private static string GetVanillaGlobalShaderCache(GameTarget target)
+        {
+            var shaderCacheBackupFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), "GlobalShaderCacheBackup");
+            if (!Directory.Exists(shaderCacheBackupFolder))
+            {
+                Directory.CreateDirectory(shaderCacheBackupFolder);
+            }
+
+            bool hasShaderCacheBackup = false;
+
+
+            // Use shared version so user doesn't need a game backup for this single feature.
+            var sharedBackupShaderCachePath = Path.Combine(shaderCacheBackupFolder, $@"{target.Game}.bin");
+            #region Check ME3Tweaks shared backup
+            {
+                if (File.Exists(sharedBackupShaderCachePath))
+                {
+                    // Check size.
+                    bool isValidBackup = true;
+                    var fi = new FileInfo(sharedBackupShaderCachePath);
+                    var info = ShaderFileMap[target.Game];
+                    if (fi.Length != info.size)
+                    {
+                        // Cannot use this file.
+                        isValidBackup = false;
+                        File.Delete(sharedBackupShaderCachePath); // Invalid
+                    }
+
+                    if (isValidBackup && MUtilities.CalculateHash(sharedBackupShaderCachePath) != info.hash)
+                    {
+                        // Cannot use this file.
+                        isValidBackup = false;
+                        File.Delete(sharedBackupShaderCachePath); // Invalid
+                    }
+
+                    // File is valid.
+                    hasShaderCacheBackup = isValidBackup;
+                }
+            }
+            #endregion
+
+            #region ME3Tweaks Backup
+            if (!hasShaderCacheBackup)
+            {
+                // Find it in ME3Tweaks Backup
+                var backup = BackupService.GetGameBackupPath(target.Game);
+                if (backup != null)
+                {
+                    var globalShaderCacheF = Path.Combine(backup, "BioGame", "CookedPCConsole", "GlobalShaderCache-PC-D3D-SM5.bin");
+                    if (File.Exists(globalShaderCacheF))
+                    {
+                        // Copy to backup
+                        File.Copy(globalShaderCacheF, sharedBackupShaderCachePath, true);
+                        MLog.Information($@"Copied global shader cache from game backup for {target.Game}.");
+                        hasShaderCacheBackup = true;
+                    }
+                }
+            }
+            #endregion
+
+            #region Game version
+            if (!hasShaderCacheBackup)
+            {
+                var gameShaderCache = Path.Combine(target.GetCookedPath(), @"GlobalShaderCache-PC-D3D-SM5.bin");
+                if (File.Exists(gameShaderCache))
+                {
+                    // Check file is vanilla.
+                    bool isVanilla = true;
+                    var fi = new FileInfo(gameShaderCache);
+                    var info = ShaderFileMap[target.Game];
+                    if (fi.Length != info.size)
+                    {
+                        // Cannot use this file.
+                        isVanilla = false;
+                    }
+
+                    if (isVanilla && MUtilities.CalculateHash(sharedBackupShaderCachePath) != info.hash)
+                    {
+                        // Cannot use this file.
+                        isVanilla = false;
+                    }
+
+                    if (isVanilla)
+                    {
+                        File.Copy(gameShaderCache, sharedBackupShaderCachePath, true);
+                        MLog.Information($@"Backed up global shader cache from installation");
+                        hasShaderCacheBackup = true;
+                    }
+                }
+            }
+            #endregion
+
+            return hasShaderCacheBackup ? sharedBackupShaderCachePath : null;
         }
 
         private static bool ExtractShaderIndex(string filepath, out int shaderIndex)
