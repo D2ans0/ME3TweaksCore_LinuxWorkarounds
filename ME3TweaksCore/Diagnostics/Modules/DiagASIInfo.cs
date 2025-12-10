@@ -1,4 +1,5 @@
-﻿using LegendaryExplorerCore.Packages;
+﻿using LegendaryExplorerCore.Helpers;
+using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Localization;
@@ -19,11 +20,9 @@ namespace ME3TweaksCore.Diagnostics.Modules
         // KismetLogger uses .txt still (we don't care)
         private static readonly string[] asilogExtensions = [@".log"];
 
-        internal override void RunModule(LogUploadPackage package)
+        private void WriteASIInfoOld(LogUploadPackage package)
         {
             var diag = package.DiagnosticWriter;
-
-            MLog.Information(@"Collecting ASI mod information");
 
             #region ASI File Information
             package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingASIFileInformation));
@@ -86,6 +85,104 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
             #endregion
 
+        }
+
+        internal override void RunModule(LogUploadPackage package)
+        {
+            var diag = package.DiagnosticWriter;
+
+            MLog.Information(@"Collecting ASI mod information");
+
+            #region ASI Mods Table
+            package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingASIFileInformation));
+
+            string asidir = M3Directories.GetASIPath(package.DiagnosticTarget);
+            diag.AddDiagLine(@"Installed ASI mods", LogSeverity.DIAGSECTION);
+            if (Directory.Exists(asidir))
+            {
+                diag.AddDiagLine(@"The following ASI files are located in the ASI directory:");
+                string[] files = Directory.GetFiles(asidir, @"*.asi");
+                if (!files.Any())
+                {
+                    diag.AddDiagLine(@"ASI directory is empty. No ASI mods are installed.");
+                }
+                else
+                {
+
+                    var asiRows = new List<string>();
+                    
+                    // Get all instaleld ASIs.
+                    var installedASIs = package.DiagnosticTarget.GetInstalledASIs();
+
+                    // Find list of non-unique ASIs, these will cause big problems
+                    var nonUniqueItems = installedASIs.OfType<KnownInstalledASIMod>().SelectMany(
+                        x => installedASIs.OfType<IKnownInstalledASIMod>().Where(
+                            y => x != y
+                                 && x.AssociatedManifestItem.OwningMod ==
+                                 y.AssociatedManifestItem.OwningMod)
+                        ).Distinct().ToList();
+
+                    // Enumerate list of known ASI mods EXCLUDING duplicates
+                    foreach (var knownAsiMod in installedASIs.OfType<IKnownInstalledASIMod>().Except(nonUniqueItems))
+                    {
+                        var cell = makeKnownAsiModRow(knownAsiMod);
+                        // Add the row
+                        asiRows.Add($@"<tr>{cell}</tr>");
+                    }
+
+                    // Enumerate list of unidentified ASI mods.
+                    foreach (var unknownAsiMod in installedASIs.OfType<IUnknownInstalledASIMod>())
+                    {
+                        // Filename
+                        var cell = $@"<td>{Path.GetFileName(unknownAsiMod.InstalledPath)}</td>";
+
+                        // Manifest Name
+                        cell += $@"<td>Unknown</td>";
+
+                        // Version
+                        cell += $@"<td>Unknown</td>";
+
+                        // The description of the ASI... not sure how useful this is
+                        cell += $@"<td>Unknown ASI - use with caution</td>";
+
+                        // Add the row
+                        asiRows.Add($@"<tr class=""unknown-asi"">{cell}</tr>");
+                    }
+
+                    // Enumerate list of duplicate ASIs
+                    foreach (var duplicateItem in nonUniqueItems)
+                    {
+                        var cell = makeKnownAsiModRow(duplicateItem, @"DUPLICATE ASI - This is likely to crash the game");
+                        // Add the row
+                        asiRows.Add($@"<tr class=""duplicate-asi"">{cell}</tr>");
+                    }
+
+                    // Make table.
+                    var asiTable = $@"
+                    [HTML]
+                    <table class=""asitable"">
+                        <thead>
+                            <th>ASI Filename</th>
+                            <th>Known name</th>
+                            <th>Version</th>
+                            <th>Description</th>
+                        </thead>
+                        <tbody>
+                            {string.Join("\n", asiRows)}
+                        </tbody>
+                    </table>
+                    [/HTML]";
+
+                    diag.AddDiagLine(string.Join("\n", asiTable.SplitLinesAll(options: StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())));
+                    diag.AddDiagLine(@"Ensure that only one version of an ASI is installed. If multiple copies of the same one are installed, the game may crash on startup.");
+                }
+            }
+            else
+            {
+                diag.AddDiagLine(@"ASI directory does not exist. No ASI mods are installed.");
+            }
+            #endregion
+
             #region ASI Logs
             if (package.DiagnosticTarget.Game.IsLEGame())
             {
@@ -111,6 +208,33 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 }
             }
             #endregion
+        }
+
+        /// <summary>
+        /// Shared code for making the row of a known ASI mod
+        /// </summary>
+        /// <param name="knownAsiMod"></param>
+        /// <returns></returns>
+        private string makeKnownAsiModRow(IKnownInstalledASIMod knownAsiMod, string descriptionOverride = null)
+        {
+            // Filename
+            var cell = $@"<td>{Path.GetFileName(knownAsiMod.InstalledPath)}</td>";
+
+            // Manifest Name
+            cell += $@"<td>{knownAsiMod.AssociatedManifestItem.Name}</td>";
+
+            // Manifest Version and outdated
+            var classModifier = @"";
+            if (knownAsiMod.Outdated)
+            {
+                classModifier = @" class=""outdated-asi""";
+            }
+            cell += $@"<td{classModifier}>v{knownAsiMod.AssociatedManifestItem.Version}</td>";
+
+            // The description of the ASI... not sure how useful this is
+            cell += $@"<td>{descriptionOverride ?? knownAsiMod.AssociatedManifestItem.Description}</td>";
+
+            return cell;
         }
 
         /// <summary>
