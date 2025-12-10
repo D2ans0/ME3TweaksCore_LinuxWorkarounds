@@ -359,7 +359,7 @@ namespace ME3TweaksCore.NativeMods
                 MasterLE2ASIUpdateGroups.Clear();
                 MasterLE3ASIUpdateGroups.Clear();
                 XElement rootElement = XElement.Parse(xmlText.Trim());
-                Debug.WriteLine(rootElement.ToString());
+                //Debug.WriteLine(rootElement.ToString());
 
 
                 //I Love Linq
