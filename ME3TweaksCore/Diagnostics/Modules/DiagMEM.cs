@@ -617,92 +617,68 @@ namespace ME3TweaksCore.Diagnostics.Modules
         private static void addLODStatusToDiag(GameTarget selectedDiagnosticTarget, Dictionary<string, string> lods, Action<string, LogSeverity> addDiagLine)
         {
             addDiagLine(@"Texture Level of Detail (LOD) settings", LogSeverity.DIAGSECTION);
-            if (selectedDiagnosticTarget.Game.IsLEGame())
-            {
-                addDiagLine(@"These should always be blank for Legendary Edition games. Legendary Edition modding does not modify LODs due to engine changes.", LogSeverity.INFO);
-            }
 
             string iniPath = M3Directories.GetLODConfigFile(selectedDiagnosticTarget);
             if (!File.Exists(iniPath))
             {
-                addDiagLine($@"Game config file is missing - has game been run once?: {iniPath}", LogSeverity.WARN);
+                if (selectedDiagnosticTarget.Game.IsOTGame())
+                {
+                    addDiagLine($@"Game config file is missing - has game been run once?: {iniPath}", LogSeverity.WARN);
+                }
+                else
+                {
+                    addDiagLine($@"LODs are not modified (and should not be)", LogSeverity.GOOD);
+                }
                 return;
             }
 
+            bool leInvalidLodsFound = false;
             foreach (KeyValuePair<string, string> kvp in lods)
             {
-                addDiagLine($@"{kvp.Key}={kvp.Value}", LogSeverity.INFO);
-            }
-
-            var textureChar1024 = lods.FirstOrDefault(x => x.Key == @"TEXTUREGROUP_Character_1024");
-            if (string.IsNullOrWhiteSpace(textureChar1024.Key)) //does this work for ME2/ME3??
-            {
-                //not found
-                addDiagLine(@"Could not find TEXTUREGROUP_Character_1024 in config file for checking LOD settings", LogSeverity.ERROR);
-                return;
-            }
-
-            try
-            {
-                int maxLodSize = 0;
-                if (!string.IsNullOrWhiteSpace(textureChar1024.Value))
+                if (selectedDiagnosticTarget.Game.IsLEGame())
                 {
-                    //ME2,3 default to blank
-                    maxLodSize = int.Parse(StringStructParser.GetCommaSplitValues(textureChar1024.Value)[selectedDiagnosticTarget.Game == MEGame.ME1 ? @"MinLODSize" : @"MaxLODSize"]);
+                    if (!leInvalidLodsFound && kvp.Value != null)
+                    {
+                        leInvalidLodsFound = true; // So we don't print multiple times
+                        addDiagLine(@"Detected LOD settings configured in the LOD files - do not set these in Legendary Edition!", LogSeverity.FATAL);
+                    }
+                }
+                else
+                {
+                    addDiagLine($@"{kvp.Key}={kvp.Value}", LogSeverity.INFO);
+                }
+            }
+
+            if (selectedDiagnosticTarget.Game.IsOTGame())
+            {
+                var textureChar1024 = lods.FirstOrDefault(x => x.Key == @"TEXTUREGROUP_Character_1024");
+                if (string.IsNullOrWhiteSpace(textureChar1024.Key)) //does this work for ME2/ME3??
+                {
+                    //not found
+                    addDiagLine(@"Could not find TEXTUREGROUP_Character_1024 in config file for checking LOD settings", LogSeverity.ERROR);
+                    return;
                 }
 
-                // Texture mod installed, missing HQ LODs
-                var HQSettingsMissingLine = @"High quality texture LOD settings appear to be missing, but a high resolution texture mod appears to be installed.\n[ERROR]The game will not use these new high quality assets - config file was probably deleted or texture quality settings were changed in game"; //do not localize
-
-                // No texture mod, no HQ LODs
-                var HQVanillaLine = @"High quality LOD settings are not set and no high quality texture mod is installed";
-                switch (selectedDiagnosticTarget.Game)
+                try
                 {
-                    case MEGame.ME1:
-                        if (maxLodSize != 1024) //ME1 Default
-                        {
-                            //LODS MODIFIED!
-                            if (maxLodSize == 4096)
-                            {
-                                addDiagLine(@"LOD quality settings: 4K textures", LogSeverity.INFO);
-                            }
-                            else if (maxLodSize == 2048)
-                            {
-                                addDiagLine(@"LOD quality settings: 2K textures", LogSeverity.INFO);
-                            }
+                    int maxLodSize = 0;
+                    if (!string.IsNullOrWhiteSpace(textureChar1024.Value))
+                    {
+                        //ME2,3 default to blank
+                        maxLodSize = int.Parse(StringStructParser.GetCommaSplitValues(textureChar1024.Value)[selectedDiagnosticTarget.Game == MEGame.ME1 ? @"MinLODSize" : @"MaxLODSize"]);
+                    }
 
-                            //Not Default
-                            if (selectedDiagnosticTarget.TextureModded)
-                            {
-                                addDiagLine(@"This installation appears to have a texture mod installed, so unused/empty mips are already removed", LogSeverity.INFO);
-                            }
-                            else if (maxLodSize > 1024)
-                            {
-                                addDiagLine(@"Texture LOD settings appear to have been raised, but this installation has not been texture modded - game will likely have unused mip crashes.", LogSeverity.FATAL);
-                            }
-                        }
-                        else
-                        {
-                            //Default ME1 LODs
-                            if (selectedDiagnosticTarget.TextureModded && selectedDiagnosticTarget.HasALOTOrMEUITM())
-                            {
-                                addDiagLine(HQSettingsMissingLine, LogSeverity.ERROR);
-                            }
-                            else
-                            {
-                                addDiagLine(HQVanillaLine, LogSeverity.INFO);
-                            }
-                        }
+                    // Texture mod installed, missing HQ LODs
+                    var HQSettingsMissingLine = @"High quality texture LOD settings appear to be missing, but a high resolution texture mod appears to be installed.\n[ERROR]The game will not use these new high quality assets - config file was probably deleted or texture quality settings were changed in game"; //do not localize
 
-                        break;
-                    case MEGame.ME2:
-                    case MEGame.ME3:
-                        if (maxLodSize != 0)
-                        {
-                            //Not vanilla, alot/meuitm
-                            if (selectedDiagnosticTarget.TextureModded && selectedDiagnosticTarget.HasALOTOrMEUITM())
+                    // No texture mod, no HQ LODs
+                    var HQVanillaLine = @"High quality LOD settings are not set and no high quality texture mod is installed";
+                    switch (selectedDiagnosticTarget.Game)
+                    {
+                        case MEGame.ME1:
+                            if (maxLodSize != 1024) //ME1 Default
                             {
-                                //addDiagLine(HQVanillaLine, LogSeverity.INFO);
+                                //LODS MODIFIED!
                                 if (maxLodSize == 4096)
                                 {
                                     addDiagLine(@"LOD quality settings: 4K textures", LogSeverity.INFO);
@@ -711,49 +687,91 @@ namespace ME3TweaksCore.Diagnostics.Modules
                                 {
                                     addDiagLine(@"LOD quality settings: 2K textures", LogSeverity.INFO);
                                 }
+
+                                //Not Default
+                                if (selectedDiagnosticTarget.TextureModded)
+                                {
+                                    addDiagLine(@"This installation appears to have a texture mod installed, so unused/empty mips are already removed", LogSeverity.INFO);
+                                }
+                                else if (maxLodSize > 1024)
+                                {
+                                    addDiagLine(@"Texture LOD settings appear to have been raised, but this installation has not been texture modded - game will likely have unused mip crashes.", LogSeverity.FATAL);
+                                }
                             }
                             else
                             {
-                                //else if (selectedDiagnosticTarget.TextureModded) //not vanilla, but no MEM/MEUITM
-                                //{
-                                if (maxLodSize == 4096)
+                                //Default ME1 LODs
+                                if (selectedDiagnosticTarget.TextureModded && selectedDiagnosticTarget.HasALOTOrMEUITM())
                                 {
-                                    addDiagLine(@"LOD quality settings: 4K textures (no high res mod installed)", LogSeverity.WARN);
+                                    addDiagLine(HQSettingsMissingLine, LogSeverity.ERROR);
                                 }
-                                else if (maxLodSize == 2048)
+                                else
                                 {
-                                    addDiagLine(@"LOD quality settings: 2K textures (no high res mod installed)", LogSeverity.INFO);
+                                    addDiagLine(HQVanillaLine, LogSeverity.INFO);
                                 }
+                            }
 
-                                //}
-                                if (!selectedDiagnosticTarget.TextureModded)
+                            break;
+                        case MEGame.ME2:
+                        case MEGame.ME3:
+                            if (maxLodSize != 0)
+                            {
+                                //Not vanilla, alot/meuitm
+                                if (selectedDiagnosticTarget.TextureModded && selectedDiagnosticTarget.HasALOTOrMEUITM())
                                 {
-                                    //no texture mod, but has set LODs
-                                    addDiagLine(@"LODs have been explicitly set, but a texture mod is not installed - game may have black textures as empty mips may not be removed", LogSeverity.WARN);
+                                    //addDiagLine(HQVanillaLine, LogSeverity.INFO);
+                                    if (maxLodSize == 4096)
+                                    {
+                                        addDiagLine(@"LOD quality settings: 4K textures", LogSeverity.INFO);
+                                    }
+                                    else if (maxLodSize == 2048)
+                                    {
+                                        addDiagLine(@"LOD quality settings: 2K textures", LogSeverity.INFO);
+                                    }
+                                }
+                                else
+                                {
+                                    //else if (selectedDiagnosticTarget.TextureModded) //not vanilla, but no MEM/MEUITM
+                                    //{
+                                    if (maxLodSize == 4096)
+                                    {
+                                        addDiagLine(@"LOD quality settings: 4K textures (no high res mod installed)", LogSeverity.WARN);
+                                    }
+                                    else if (maxLodSize == 2048)
+                                    {
+                                        addDiagLine(@"LOD quality settings: 2K textures (no high res mod installed)", LogSeverity.INFO);
+                                    }
+
+                                    //}
+                                    if (!selectedDiagnosticTarget.TextureModded)
+                                    {
+                                        //no texture mod, but has set LODs
+                                        addDiagLine(@"LODs have been explicitly set, but a texture mod is not installed - game may have black textures as empty mips may not be removed", LogSeverity.WARN);
+                                    }
                                 }
                             }
-                        }
-                        else //default
-                        {
-                            //alot/meuitm, but vanilla settings.
-                            if (selectedDiagnosticTarget.TextureModded &&
-                                selectedDiagnosticTarget.HasALOTOrMEUITM())
+                            else //default
                             {
-                                addDiagLine(HQSettingsMissingLine, LogSeverity.ERROR);
+                                //alot/meuitm, but vanilla settings.
+                                if (selectedDiagnosticTarget.TextureModded &&
+                                    selectedDiagnosticTarget.HasALOTOrMEUITM())
+                                {
+                                    addDiagLine(HQSettingsMissingLine, LogSeverity.ERROR);
+                                }
+                                else //no alot/meuitm, vanilla setting.
+                                {
+                                    addDiagLine(HQVanillaLine, LogSeverity.INFO);
+                                }
                             }
-                            else //no alot/meuitm, vanilla setting.
-                            {
-                                addDiagLine(HQVanillaLine, LogSeverity.INFO);
-                            }
-                        }
 
-                        break;
+                            break;
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                MLog.Error(@"Error checking LOD settings: " + e.Message);
-                addDiagLine($@"Error checking LOD settings: {e.Message}", LogSeverity.INFO);
+                catch (Exception e)
+                {
+                    MLog.Error(@"Error checking LOD settings: " + e.Message);
+                    addDiagLine($@"Error checking LOD settings: {e.Message}", LogSeverity.INFO);
+                }
             }
         }
     }
