@@ -410,7 +410,7 @@ namespace ME3TweaksCore.TextureOverride
         private void ReconstituteTexture(Stream btpStream, ExportEntry exp)
         {
             // Find the matching entry
-            var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath == exp.InstancedFullPath); // Should be IFP matching in the TO
+            var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath.CaseInsensitiveEquals(exp.InstancedFullPath)); // Should be IFP matching in the TO
 
             // Create T2D
             UTexture2D texture2D = exp.IsA(@"LightMapTexture2D") ? LightMapTexture2D.Create() : UTexture2D.Create();

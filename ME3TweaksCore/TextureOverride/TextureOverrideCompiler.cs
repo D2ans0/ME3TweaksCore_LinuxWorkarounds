@@ -245,7 +245,9 @@ namespace ME3TweaksCore.TextureOverride
                         currentSourcePackage.LoadExport(texture);
                     }
                 }
-                var texBin = ObjectBinary.From<UTexture2D>(texture);
+
+                // We must use .From without typing so we get a full object back for lightmaps.
+                var texBin = ObjectBinary.From(texture) as UTexture2D;
                 for (int i = 0; i < texBin.Mips.Count; i++)
                 {
                     var sourceMip = texBin.Mips[i];
