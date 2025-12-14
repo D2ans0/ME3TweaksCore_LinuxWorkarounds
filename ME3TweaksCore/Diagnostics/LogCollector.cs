@@ -192,7 +192,7 @@ namespace ME3TweaksCore.Diagnostics
         /// <summary>
         /// Submits the given diagnostic log package to the ME3Tweaks Log Viewing service.
         /// </summary>
-        public static string SubmitDiagnosticLog(LogUploadPackage package)
+        public static LogUploadPackage SubmitDiagnosticLog(LogUploadPackage package)
         {
             StringBuilder logUploadText = new StringBuilder();
             if (package.DiagnosticTarget != null && !package.DiagnosticTarget.IsCustomOption && (package.DiagnosticTarget.Game.IsOTGame() || package.DiagnosticTarget.Game.IsLEGame()))
@@ -211,9 +211,9 @@ namespace ME3TweaksCore.Diagnostics
                 logUploadText.Append("\n"); //do not localize
             }
 
-            var logtext = logUploadText.ToString();
+            package.FullLogText = logUploadText.ToString();
             package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_compressingForUpload));
-            var lzmalog = LZMA.CompressToLZMAFile(Encoding.UTF8.GetBytes(logtext));
+            var lzmalog = LZMA.CompressToLZMAFile(Encoding.UTF8.GetBytes(package.FullLogText));
             try
             {
                 //this doesn't need to technically be async, but library doesn't have non-async method.
@@ -251,26 +251,25 @@ namespace ME3TweaksCore.Diagnostics
                 {
                     //should be valid URL.
                     MLog.Information(@"Result from server for log upload: " + responseString);
-                    return responseString;
                 }
                 else
                 {
                     MLog.Error(@"Error uploading log. The server responded with: " + responseString);
-                    return LC.GetString(LC.string_interp_serverRejectedTheUpload, responseString);
+                    package.Response = LC.GetString(LC.string_interp_serverRejectedTheUpload, responseString);
                 }
             }
             catch (AggregateException e)
             {
                 Exception ex = e.InnerException;
                 string exmessage = ex.Message;
-                return LC.GetString(LC.string_interp_logWasUnableToUpload, exmessage);
+                package.Response = LC.GetString(LC.string_interp_logWasUnableToUpload, exmessage);
             }
             catch (FlurlHttpTimeoutException)
             {
                 // FlurlHttpTimeoutException derives from FlurlHttpException; catch here only
                 // if you want to handle timeouts as a special case
                 MLog.Error(@"Request timed out while uploading log.");
-                return LC.GetString(LC.string_interp_requestTimedOutUploading);
+                package.Response = LC.GetString(LC.string_interp_requestTimedOutUploading);
 
             }
             catch (Exception ex)
@@ -285,8 +284,10 @@ namespace ME3TweaksCore.Diagnostics
                     exmessage = exmessage.Substring(0, index);
                 }
 
-                return LC.GetString(LC.string_interp_logWasUnableToUpload, exmessage);
+                package.Response = LC.GetString(LC.string_interp_logWasUnableToUpload, exmessage);
             }
+
+            return package;
         }
     }
 }

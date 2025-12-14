@@ -62,9 +62,19 @@ namespace ME3TweaksCore.Diagnostics.Support
         public Dictionary<string, byte[]> Attachments { get; set; }
 
         /// <summary>
-        /// Writer for diagnostic text.
+        /// Writer for the game diagnostic.
         /// </summary>
         public DiagWriter DiagnosticWriter { get; } = new DiagWriter();
+
+        /// <summary>
+        /// The response from the server - will either be a URL starting with https://, or an error message.
+        /// </summary>
+        public string Response { get; internal set; }
+
+        /// <summary>
+        /// The full generated log text
+        /// </summary>
+        public string FullLogText { get; internal set; }
     }
 
     /// <summary>

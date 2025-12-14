@@ -12,6 +12,9 @@ namespace ME3TweaksCore.Diagnostics
 {
     public static class LogUploader
     {
+        //12/14/2025
+        // Is this used anymore? Was this for ALOT Installer? MER doesn't use it
+        
         /// <summary>
         /// Uploads a log to the specified endpoint, using the lzma upload method. 
         /// The receiver must accept and return a link to the diagnostic, or an error reason which will be returned to the caller. 

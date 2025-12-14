@@ -8,7 +8,7 @@ using System.Threading;
 namespace ME3TweaksCore.Diagnostics.Support
 {
     /// <summary>
-    /// Class that stores the diagnostic log as it is being built.
+    /// Class that stores the diagnostic as it is being built. This doesn't include the application log.
     /// </summary>
     public class DiagWriter
     {
