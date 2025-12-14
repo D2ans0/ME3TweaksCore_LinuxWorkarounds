@@ -116,7 +116,15 @@ namespace ME3TweaksCore.Helpers.MEM
             {
                 MLog.Information($@"MassEffectModderNoGui launched, process ID: {processID}");
                 applicationStarted?.Invoke(processID);
-                MEMProcessHandler.AddProcess(Process.GetProcessById(processID), shouldWaitforExit, reasonCannotBeSafelyTerminated);
+                try
+                {
+                    MEMProcessHandler.AddProcess(Process.GetProcessById(processID), shouldWaitforExit, reasonCannotBeSafelyTerminated);
+                }
+                catch (Exception e)
+                {
+                    // Couldn't add process, may have aleady existed
+                    MLog.Warning($@"Couldn't add process to tracker - it may have already terminated: {e.Message}");
+                }
             }
 
             void appExited(int code)
@@ -533,7 +541,8 @@ namespace ME3TweaksCore.Helpers.MEM
             currentActionCallback?.Invoke(LC.GetString(LC.string_preparingToInstallTextures));
             var cmdParams = $@"--install-mods --gameid {target.Game.ToMEMGameNum()} --input ""{memFileListFile}"" --verify --ipc";
 
-            if (skipMarkers) {
+            if (skipMarkers)
+            {
                 cmdParams += $@" --skip-markers";
             }
 
