@@ -18,6 +18,7 @@ using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Services;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
+using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 
@@ -31,7 +32,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
         public const string BIO2DA_BGFIS_DATA_BLOCK = @"BGFIS-Bio2DAMerge";
 
-        private static readonly string[] Mergable2DAFiles = new[]
+        public static readonly string[] Mergable2DAFiles = new[]
         {
             @"Engine.pcc",
             @"SFXGame.pcc",
@@ -72,10 +73,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         public static bool RunBio2DAMerge(GameTarget target)
         {
             MLog.Information($@"Performing Bio2DA Merge for game: {target.TargetPath}");
-
-            //var coalescedStream = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config.Coalesced_INT.bin");
-            //var configBundle = ConfigAssetBundle.FromSingleStream(MEGame.LE1, coalescedStream);
-
             var dlcMountsInOrder = MELoadedDLC.GetDLCNamesInMountOrder(target.Game, target.TargetPath);
 
             // For BGFIS
@@ -101,12 +98,24 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
 
             // Step 1: Load all modifiable packages
+            // 12/14/2025 - Align to only work on basegame as a later step
+            // only looks at basegame paths which is confusing to debug
             var loadedFiles = target.GetFilesLoadedInGame();
             var packageContainer = new Bio2DAMergePackageContainer();
             foreach (var file in Mergable2DAFiles)
             {
                 if (loadedFiles.TryGetValue(file, out var filepath))
                 {
+                    var basegamePath = Path.Combine(target.GetCookedPath(), file);
+                    if (!basegamePath.CaseInsensitiveEquals(filepath))
+                    {
+                        // Incompatible mod is installed which is breaking Bio2DA Merge.
+                        var incompatDLC = filepath.DetermineDLCNameFromPath();
+                        var tpmi = TPMIService.GetThirdPartyModInfo(incompatDLC, target.Game);
+                        MLog.Error($@"Incompatible mod detected for Bio2DA Merge: {incompatDLC} overrides 2DA merge file {file} at path {filepath}. Bio2DA Merge only can modify basegame files and will not modify DLC files. This mod is breaking the Bio2DA merge system.");
+                        throw new Exception($"'{tpmi?.modname ?? incompatDLC}' is not compatible with the automated Bio2DA Merge feature. Please ensure your mod is up to date and notify the mod developer that mods cannot have DLC overrides of merge targets.");
+                    }
+
                     // Hash the files before we open them so we can pull the information from Basegame File Identification Service.
                     var packageData = MEPackageHandler.ReadAllFileBytesIntoMemoryStream(filepath);
                     packageContainer.OriginalHashes[target.GetRelativePath(filepath)] =
