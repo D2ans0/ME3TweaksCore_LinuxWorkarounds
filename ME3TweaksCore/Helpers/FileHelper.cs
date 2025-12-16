@@ -5,6 +5,9 @@ using System.Security;
 
 namespace ME3TweaksCore.Helpers
 {
+    /// <summary>
+    /// Helper class for file operations
+    /// </summary>
     public static partial class FileHelper
     {
         [StructLayout(LayoutKind.Sequential)]
@@ -68,17 +71,35 @@ namespace ME3TweaksCore.Helpers
         // Posted by jdphenix, modified by community. See post 'Timeline' for change history
         // Retrieved 2025-12-13, License - CC BY-SA 3.0
 
+        /// <summary>
+        /// Determines if two paths are on the same volume. Use this to determine how to handle using File.Move().
+        /// If an error occurs in this method, items are treated as on the same volume, calling code should assume
+        /// File.Move() is the default for safety. The source path must exist, and the directory at least for the dest must
+        /// also exist.
+        /// </summary>
+        /// <param name="src">The source path.</param>
+        /// <param name="dest">The destination path.</param>
+        /// <returns>True if both paths are on the same volume; otherwise, false.</returns>
         public static bool IsOnSameVolume(string src, string dest)
         {
+
             IntPtr srcHandle = IntPtr.Zero, destHandle = IntPtr.Zero;
             bool ensureDeletion = false;
 
             try
             {
-                if (!File.Exists(dest) && Directory.Exists(dest))
+                if (!File.Exists(dest))
                 {
-                    ensureDeletion = true;
-                    File.Create(dest).Dispose();
+                    if (Directory.GetParent(dest).Exists)
+                    {
+                        ensureDeletion = true;
+                        File.Create(dest).Dispose();
+                    }
+                    else
+                    {
+                        // Treat as same for safety
+                        return true;
+                    }
                 }
 
                 srcHandle = CreateFile(src, FileAccess.Read, FileShare.ReadWrite, IntPtr.Zero,
@@ -99,6 +120,10 @@ namespace ME3TweaksCore.Helpers
                 }
 
                 return srcInfo.VolumeSerialNumber == destInfo.VolumeSerialNumber;
+            } catch
+            {
+                // On error, assume same volume for safety
+                return true;
             }
             finally
             {
