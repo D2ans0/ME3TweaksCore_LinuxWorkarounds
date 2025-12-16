@@ -20,7 +20,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
     /// </summary>
     public class GlobalShaderMerge
     {
-        private static string SHADER_MERGE_PATTERN = @"GlobalShader-*.m3gs";
+        public static string SHADER_MERGE_PATTERN = @"GlobalShader-*.m3gs";
         private record GSMFileInfo(string hash, uint size);
 
         /// <summary>
