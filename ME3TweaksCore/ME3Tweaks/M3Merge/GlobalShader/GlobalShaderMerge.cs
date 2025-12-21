@@ -32,6 +32,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             { MEGame.LE3, new GSMFileInfo("", 0) },
         };
 
+        /// <summary>
+        /// Runs the shader merge process for the specified game target. Scans DLC_MOD folders for .m3gs files
+        /// and merges them into the GlobalShaderCache-PC-D3D-SM5.bin file in mount order.
+        /// </summary>
+        /// <param name="target">The game target to perform shader merge on</param>
+        /// <param name="log">Whether to enable detailed logging</param>
+        /// <returns>True if the merge completed successfully, false if a vanilla shader cache could not be sourced</returns>
         public static bool RunShaderMerge(GameTarget target, bool log)
         {
             MLog.Information($@"Performing Shader Merge for game: {target.TargetPath}");
@@ -119,9 +126,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
         }
 
         /// <summary>
-        /// Tries to source a vanilla global shader cache
+        /// Attempts to source a vanilla global shader cache file from multiple locations in priority order:
+        /// 1. ME3Tweaks shared backup folder
+        /// 2. ME3Tweaks game backup
+        /// 3. Current game installation (if vanilla)
         /// </summary>
-        /// <returns>Path to a vanilla file, or null if none could be found.</returns>
+        /// <param name="target">The game target to source the shader cache for</param>
+        /// <returns>Path to a vanilla GlobalShaderCache-PC-D3D-SM5.bin file, or null if none could be found or validated</returns>
         private static string GetVanillaGlobalShaderCache(GameTarget target)
         {
             var shaderCacheBackupFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), "GlobalShaderCacheBackup");
@@ -217,6 +228,14 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             return hasShaderCacheBackup ? sharedBackupShaderCachePath : null;
         }
 
+
+        /// <summary>
+        /// Extracts the shader index number from a global shader merge filename.
+        /// Expected format: GlobalShader-INDEX-[...].m3gs
+        /// </summary>
+        /// <param name="filepath">The full path to the shader file</param>
+        /// <param name="shaderIndex">The extracted shader index, or -1 if extraction failed</param>
+        /// <returns>True if the index was successfully extracted and parsed, false otherwise</returns>
         private static bool ExtractShaderIndex(string filepath, out int shaderIndex)
         {
             shaderIndex = -1;
@@ -231,6 +250,11 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             return false;
         }
 
+        /// <summary>
+        /// Checks if the specified game target requires shader merging by scanning for .m3gs files in DLC_MOD folders.
+        /// </summary>
+        /// <param name="target">The game target to check</param>
+        /// <returns>True if shader merging is needed</returns>
         public static bool NeedsMerged(GameTarget target)
         {
             return true;
