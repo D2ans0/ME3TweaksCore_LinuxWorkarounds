@@ -87,14 +87,31 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
                     var extractedShaderIdx = ExtractShaderIndex(gs, out var shaderIndex);
                     if (extractedShaderIdx && shaderIndex >= 0 && shaderIndex < shaders.Count)
                     {
-                        MLog.Information($@"Merging M3 Global Shader {gs}");
-                        shaders[shaderIndex].ShaderByteCode = File.ReadAllBytes(gs);
+                        var relPath = Path.GetRelativePath(target.TargetPath, gs);
+                        MLog.Information($@"Merging M3 Global Shader {relPath}");
+                        var shaderCode = File.ReadAllBytes(gs);
+
+                        if (shaderCode.Length > 4)
+                        {
+                            var magic = BitConverter.ToInt32(shaderCode, 0);
+                            if (magic != 0x43425844)
+                            {
+                                MLog.Error($@"Invalid m3gs file: File doesn't appear to be a compiled shader file");
+                                throw new Exception($"Invalid m3gs file: {relPath}. File has invalid header.");
+                            }
+                        }
+                        else
+                        {
+                            MLog.Error($@"Invalid m3gs file: File is not a valid compiled shader");
+                            throw new Exception($"Invalid m3gs file: {relPath}. File is not a valid compiled shader.");
+                        }
+                        shaders[shaderIndex].ShaderByteCode = shaderCode;
                         recordMerge($@"{dlc}-{Path.GetFileName(gs)}");
                         mergedAny = true;
                     }
                     else
                     {
-                        MLog.Error($@"Invalid filename for global shader: {Path.GetFileName(gs)}. Must be in the form: GlobalShader-INDEX[...].m3gs and between 0 and {shaders.Count}. Skipping.");
+                        MLog.Error($@"Invalid filename for global shader: {Path.GetFileName(gs)}. Must be in the form: GlobalShader-INDEX-[...].m3gs and between 0 and {shaders.Count}. Skipping.");
                     }
                 }
             }
