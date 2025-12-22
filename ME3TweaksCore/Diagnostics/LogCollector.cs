@@ -235,22 +235,14 @@ namespace ME3TweaksCore.Diagnostics
                 dictionary.Add(@"ToolVersion", MLibraryConsumer.GetAppVersion());
 
                 //10/22/2023 - Change to unified endpoint
-                string responseString = @"https://me3tweaks.com/modmanager/logservice/shared/logupload".PostUrlEncodedAsync(dictionary)
-
-                    //new
-                    //{
-                    //    LogData = Convert.ToBase64String(lzmalog),
-                    //    Attachments = package.Attachments,
-                    //    ToolName = MLibraryConsumer.GetHostingProcessname(),
-                    //    ToolVersion = MLibraryConsumer.GetAppVersion()
-                    //})
-                    .ReceiveString().Result;
+                string responseString = @"https://me3tweaks.com/modmanager/logservice/shared/logupload".PostUrlEncodedAsync(dictionary).ReceiveString().Result;
                 Uri uriResult;
                 bool result = Uri.TryCreate(responseString, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
                 if (result)
                 {
                     //should be valid URL.
                     MLog.Information(@"Result from server for log upload: " + responseString);
+                    package.Response = responseString;
                 }
                 else
                 {

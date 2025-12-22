@@ -124,7 +124,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             {
                 // Serialize the assets
                 var ms = new MemoryStream();
-                var gscsc = new PackagelessSerializingContainer(ms, null) { Game = target.Game };
+                var gscsc = new PackagelessSerializingContainer(ms, null);
+                gscsc.SetGame(target.Game);
                 globalShaderCache.WriteTo(gscsc);
                 ms.WriteByte(0); // This forces size change, which lets us tell it's been modified on size check.
                 ms.WriteToFile(outF);
