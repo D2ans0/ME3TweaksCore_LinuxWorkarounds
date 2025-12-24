@@ -27,9 +27,9 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
         /// Map of information about the global shader cache for each game
         /// </summary>
         private static Dictionary<MEGame, GSMFileInfo> ShaderFileMap = new() {
-            { MEGame.LE1, new GSMFileInfo("", 0) },
-            { MEGame.LE2, new GSMFileInfo("", 0) },
-            { MEGame.LE3, new GSMFileInfo("", 0) },
+            { MEGame.LE1, new GSMFileInfo(@"29be3e69c5b1f5139b88e3764f018af6", 1506125) },
+            { MEGame.LE2, new GSMFileInfo(@"69de7c7b796bd9e376325195914ebfb4", 1526420) },
+            { MEGame.LE3, new GSMFileInfo(@"997970d72635b082f7c039802f39ef27", 2212817) },
         };
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
             }
 
             var records = new List<BasegameFileRecord>();
-            var outF = Path.Combine(target.GetCookedPath(), "GlobalShaderCache-PC-D3D-SM5.bin");
+            var outF = Path.Combine(target.GetCookedPath(), @"GlobalShaderCache-PC-D3D-SM5.bin");
 
             // Set the BGFIS record name
             if (mergedAny)
@@ -153,7 +153,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
         /// <returns>Path to a vanilla GlobalShaderCache-PC-D3D-SM5.bin file, or null if none could be found or validated</returns>
         private static string GetVanillaGlobalShaderCache(GameTarget target)
         {
-            var shaderCacheBackupFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), "GlobalShaderCacheBackup");
+            var shaderCacheBackupFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), @"GlobalShaderCacheBackup");
             if (!Directory.Exists(shaderCacheBackupFolder))
             {
                 Directory.CreateDirectory(shaderCacheBackupFolder);
@@ -276,7 +276,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
         public static bool NeedsMerged(GameTarget target)
         {
             return true;
-            var supercedances = target.GetFileSupercedances([".m3gs"]); //, viaTOC: true);
+            // var supercedances = target.GetFileSupercedances([".m3gs"]); //, viaTOC: true);
         }
     }
 }
