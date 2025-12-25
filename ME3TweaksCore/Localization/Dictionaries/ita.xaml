@@ -3,7 +3,7 @@
 					xmlns:system="clr-namespace:System;assembly=System.Runtime">
 	<system:String x:Key="string_textureModded">Texture moddata</system:String>
 	<system:String x:Key="string_interp_modNameByAuthorName">{0} di {1}</system:String>
-	<system:String x:Key="string_upd_betaBuildNotificationString">Quersto aggiornamento è una versione beta. Lo stai ricevendo perché hai attivato la Modalità Beta nelle impostazioni.</system:String>
+	<system:String x:Key="string_upd_betaBuildNotificationString">Questo aggiornamento è una versione beta. Lo stai ricevendo perché hai attivato la Modalità Beta nelle impostazioni.</system:String>
 	<system:String x:Key="string_upd_1DayAgo">1 giorno fa</system:String>
 	<system:String x:Key="string_upd_today">Oggi</system:String>
 	<system:String x:Key="string_upd_interp_daysAgoDaysAgo">{0} giorni fa</system:String>
@@ -49,9 +49,9 @@
 	<system:String x:Key="string_creatingBackup">Creazione del backup</system:String>
 	<system:String x:Key="string_cannotBackupModifiedGame">Impossibile eseguire il backup di un gioco modificato</system:String>
 	<system:String x:Key="string_followingFilesDoNotMatchTheVanillaDatabase">I seguenti file non corrispondono al database vanilla e sembrano essere modificati. A causa della modifica di questi file, non è possibile eseguire un backup di questa installazione.</system:String>
-	<system:String x:Key="string_inconsistentDLCDetected">Rilevato DLC incosistente</system:String>
+	<system:String x:Key="string_inconsistentDLCDetected">Rilevato DLC inconsistente</system:String>
 	<system:String x:Key="string_dialogTheFollowingDLCAreInAnInconsistentState">I seguenti DLC sono in uno stato inconsistente; possiedono uno SFAR compresso ma contengono file di gioco decompressi. La configurazione di questi DLC non è supportata, i file decompressi devono essere rimossi manualmente.</system:String>
-	<system:String x:Key="string_dialogDLCModsWereDetectedCannotBackup">Sono state individuate le seguenti cartelle DLC che non sono parte del gioco ufficiale di BioWare. I backup non possono includere mod DLC - il gioco non essere stato modificato.</system:String>
+	<system:String x:Key="string_dialogDLCModsWereDetectedCannotBackup">Sono state individuate le seguenti cartelle DLC che non sono parte del gioco ufficiale di BioWare. I backup non possono includere Mod DLC - il gioco non essere stato modificato.</system:String>
 	<system:String x:Key="string_inconsistentDLCDetectedUnofficialGame">È stato individuato un DLC inconsistente. Potrebbe essere dovuto ad una copia non ufficiale del gioco.</system:String>
 	<system:String x:Key="string_movies">Filmati</system:String>
 	<system:String x:Key="string_basegame">Gioco base</system:String>
@@ -59,15 +59,15 @@
 	<system:String x:Key="string_dialogBackupCannotBeSubdirectoryOfGame" xml:space="preserve">Un backup non può essere creato in una sottocartella del gioco selezionato.\n\nPercorso selezionato: {0}\nObiettivi in conflitto: {1}</system:String>
 	<system:String x:Key="string_cannotCreateBackup">Impossibile creare un backup</system:String>
 	<system:String x:Key="string_someDlcNotInstalled">Alcuni DLC non sono installati</system:String>
-	<system:String x:Key="string_dialog_notAllDLCInstalled" xml:space="preserve">Questo obiettivo non ha tutti i DLC UFFICIALI installati. Assicurati di avere installato tutti i DLC UFFICALI che vuoi includere nel tuo backup, altrimenti un ripristino del gioco non li includerà tutti.\n\nIl seguente DLC non è installato:\n{0}\n\nNota che non ti servono tutti i DLC per un backup (come DLC che non hai acquistato), ma alcune funzionalità del Mod Manager dipendono dalla presenza di DLC specifici, come ME3Tweaks ModMaker.\n\nFare un backup di questo obiettivo?</system:String>
+	<system:String x:Key="string_dialog_notAllDLCInstalled" xml:space="preserve">Questo obiettivo non ha tutti i DLC UFFICIALI installati. Assicurati di avere installato tutti i DLC UFFICIALI che vuoi includere nel tuo backup, altrimenti un ripristino del gioco non li includerà tutti.\n\nIl seguente DLC non è installato:\n{0}\n\nNota che non ti servono tutti i DLC per un backup (come DLC che non hai acquistato), ma alcune funzionalità del Mod Manager (come ME3Tweaks ModMaker) dipendono dalla presenza di DLC specifici.\n\nVuoi fare un backup di questo obiettivo?</system:String>
 	<system:String x:Key="string_interp_dialog_linkFailedSubdirectoryOfGameDocumentsFolder">La cartella Documenti/BioWare/ (e i suoi discendenti) non può essere usata come destinazione di backup, in quanto il gioco può caricare file da essa. Per favore, scegli un'altra cartella.</system:String>
 	<system:String x:Key="string_locationNotAllowedForBackup">Percorso non permesso per il backup</system:String>
 	<system:String x:Key="string_dialog_userAccountDoesntHaveWritePermissionsBackup">Il tuo account utente non ha permessi di scrittura nella cartella di destinazione selezionata. Scegli un'altra cartella.</system:String>
 	<system:String x:Key="string_leftoverTextureFilesFound">Trovati rimasugli di file di texture</system:String>
-	<system:String x:Key="string_dialog_foundLeftoverTextureFiles">Sono stati trovati file addizionali da una precedente installazione di texture. Non si può avere un backup con rimasugli di file di texture nella cartella del gioco. Questo è un segno che la cartella del gioco non è stata eliminata completamente durante il ripristino del gioco alla versione vanilla.\n\nDovresti eliminare la tua intera cartella del gioco, installare il gioco da zero e poi effettuare il backup.</system:String>
+	<system:String x:Key="string_dialog_foundLeftoverTextureFiles">Sono stati trovati file addizionali rimasti da una precedente installazione di texture. Non si può avere un backup con rimasugli di file di texture nella cartella del gioco. Questo è un segno che la cartella del gioco non è stata eliminata completamente durante il ripristino del gioco alla versione vanilla.\n\nDovresti eliminare l'intera cartella del tuo gioco, installare il gioco da zero e poi effettuare il backup.</system:String>
 	<system:String x:Key="string_dialog_selectWhichLanguagesToIncludeInBackup">Seleziona quali lingue includere nel backup. Le lingue non selezionate non saranno backuppate; se scegli di riparare il gioco queste lingue saranno riscaricate.</system:String>
 	<system:String x:Key="string_selectLanguages">Seleziona le lingue</system:String>
-	<system:String x:Key="string_pleaseWait">Per favore attendere</system:String>
+	<system:String x:Key="string_pleaseWait">Attendere prego</system:String>
 	<system:String x:Key="string_backedUp">Backup effettuato</system:String>
 	<system:String x:Key="string_interp_backupStoredAtX">Backup salvato in {0}</system:String>
 	<system:String x:Key="string_unlinkBackup">Scollega il backup</system:String>
@@ -82,17 +82,17 @@
 	<system:String x:Key="string_gameNotInstalled">Gioco non installato</system:String>
 	<system:String x:Key="string_gameNotInstalledRunOnce">Gioco non installato. Avvialo almeno una volta per assicurarti che sia configurato completamente</system:String>
 	<system:String x:Key="string_cantCreateBackup">Impossibile creare il backup</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidTargetFile">Il merge Bio2DA 'packagefile' non è valido:  {0} - impossibile effettuare il merge all'interno di file 2DA non del gioco di base/Impatto Imminente</system:String>
-	<system:String x:Key="string_interp_2damerge_couldNotFindTarget">Il merge Bio2DA 'packagefile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookedPCConsole del gioco di base target</system:String>
-	<system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Il merge Bio2DA 'mergepackagegile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookerPCConsole della mod</system:String>
+	<system:String x:Key="string_interp_2damerge_invalidTargetFile">Il merge Bio2DA 'packagefile' non è valido:  {0} - impossibile effettuare il merge nei file 2DA non appartenenti al gioco base/di Impatto Imminente</system:String>
+	<system:String x:Key="string_interp_2damerge_couldNotFindTarget">Il merge Bio2DA 'packagefile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookedPCConsole del gioco base obiettivo</system:String>
+	<system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Il merge Bio2DA 'mergepackagegile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookedPCConsole della mod</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidTableNameMissingPart">Il merge Bio2DA 'mergetables' non è valido: {0} - il nome base dell'oggetto non termina in _base</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindSourceTableExport">Il merge Bio2DA 'mergetables' non è valido: {0} - impossibile trovare la tabella con la specifica istanza del percorso completo all'interno del pacchetto '{1}'</system:String>
+	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindSourceTableExport">Il merge Bio2DA 'mergetables' non è valido: {0} - impossibile trovare la tabella con il percorso completo istanziato all'interno del package '{1}'</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidSourceObjectIsNot2DA">Il merge Bio2DA 'mergetables' non è valido: {0} - l'esportazione non è un Bio2DA o una sottoclasse. Era: {1}</system:String>
-	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Il merge Bio2DA 'mergetables' non è valido: {0} - impossibile trovare una tabella del gioco di base con nome base '{1}' all'interno del pacchetto '{2}'</system:String>
+	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Il merge Bio2DA 'mergetables' non è valido: {0} - impossibile trovare una tabella del gioco base con nome base '{1}' all'interno del package '{2}'</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Il merge Bio2DA 'mergetables' non è valido: {0} - questa non è una tabella vanilla. La merge Bio2DA non funziona con tabelle non vanilla</system:String>
 	<system:String x:Key="string_interp_XDoesNotSupportGameY">{0} non supporta il gioco {1}</system:String>
 	<system:String x:Key="string_interp_copyDidntWorkX">Il file di destinazione non esiste dopo la copia del file: {0}</system:String>
-	<system:String x:Key="string_interp_failedToLoadPackageXY">Impossibile caricare il pacchetto {0}: {1}</system:String>
+	<system:String x:Key="string_interp_failedToLoadPackageXY">Impossibile caricare il package {0}: {1}</system:String>
 	<system:String x:Key="string_generatingMod">Generazione mod in corso</system:String>
 	<system:String x:Key="string_interp_dok_mustContainDescriptorX">Le struct DLCOptionKey devono contenere un descrittore di nome '{0}'</system:String>
 	<system:String x:Key="string_interp_dok_withOptionXInstalled">(con opzione {0} installata)</system:String>
@@ -177,8 +177,8 @@
 	<system:String x:Key="string_enable">Abilita</system:String>
 	<system:String x:Key="string_disable">Disabilita</system:String>
 	<system:String x:Key="string_disabled">Disabilitato</system:String>
-	<system:String x:Key="string_tooltip_disableDLC" xml:space="preserve">Disabilita questa mod DLC dal caricamento.&#10;Questo non modifica nessun file e può essere fatto tranquillamente dopo che le mod delle texture sono state installate</system:String>
-	<system:String x:Key="string_tooltip_enableDLC" xml:space="preserve">Abilita questa mod DLC per caricarla in gioco</system:String>
+	<system:String x:Key="string_tooltip_disableDLC" xml:space="preserve">Disabilita questa Mod DLC dal caricamento.&#10;Questo non modifica nessun file e può essere fatto tranquillamente dopo che le mod delle texture sono state installate</system:String>
+	<system:String x:Key="string_tooltip_enableDLC" xml:space="preserve">Abilita questa Mod DLC per caricarla in gioco</system:String>
 	<system:String x:Key="string_other">Altro</system:String>
 	<system:String x:Key="string_m3ConsoleKeybinds">Assegnazione Tasti Console M3</system:String>
 	<system:String x:Key="string_buildNotSigned">Build non firmata</system:String>
@@ -196,7 +196,7 @@
 	<system:String x:Key="string_collectingME3SessionLog">Raccolta dei log di sessione di ME3</system:String>
 	<system:String x:Key="string_gettingTextureInfo">Raccolta di informazioni sull'installazione di texture moddate</system:String>
 	<system:String x:Key="string_collectingASILogFiles">Raccolta dei file di log ASI</system:String>
-	<system:String x:Key="string_collectingBasegameFileModifications">Raccolta modifiche file del gioco di base in corso</system:String>
+	<system:String x:Key="string_collectingBasegameFileModifications">Raccolta delle modifiche ai file del gioco base in corso</system:String>
 	<system:String x:Key="string_checkingForBlacklistedModsMEM">Controllo di mod in lista nera (MEM) in corso</system:String>
 	<system:String x:Key="string_collectingLODSettings">Raccolta impostazioni LOD in corso</system:String>
 	<system:String x:Key="string_collectingTOCFileInformation">Raccolta informazioni file TOC in corso</system:String>
