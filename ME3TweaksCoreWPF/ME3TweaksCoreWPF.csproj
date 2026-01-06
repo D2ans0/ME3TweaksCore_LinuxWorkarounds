@@ -6,11 +6,18 @@
 		<Company>ME3Tweaks</Company>
 		<Authors>ME3Tweaks</Authors>
 		<Version>10.0</Version>
-		<!-- Windows 2004 -->
 		<TargetFrameworks>net10.0-windows</TargetFrameworks>
 		<UseWPF>true</UseWPF>
 		<Platforms>x64</Platforms>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="LogViewer\Web.zip" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="LogViewer\Web.zip" />
+	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\ME3TweaksCore\ME3TweaksCore.csproj" />
 		<ProjectReference Include="..\ME3TweaksCore\submodules\LegendaryExplorer\LegendaryExplorer\LegendaryExplorerCore\LegendaryExplorerCore.csproj" />
