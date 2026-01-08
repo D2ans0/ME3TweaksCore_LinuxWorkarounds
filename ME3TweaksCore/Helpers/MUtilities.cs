@@ -286,7 +286,7 @@ namespace ME3TweaksCore.Helpers
                    (os.Version.Major >= 10);
         }
 
-        internal static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
+        public static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
         {
             assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
@@ -300,14 +300,15 @@ namespace ME3TweaksCore.Helpers
             return assembly.GetManifestResourceStream(assemblyResource);
         }
 
-        internal static MemoryStream ExtractInternalFileToStream(string internalResourceName)
+        public static MemoryStream ExtractInternalFileToStream(string internalResourceName, Assembly assembly = null)
         {
             MLog.Information($@"Extracting embedded file: {internalResourceName} to memory");
+            assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
             // This is for inspecting the list of files in debugger
-            var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            var resources = assembly.GetManifestResourceNames();
 #endif
-            using (Stream stream = GetResourceStream(internalResourceName))
+            using (Stream stream = GetResourceStream(internalResourceName, assembly))
             {
 #if AZURE
                 if (stream == null)
