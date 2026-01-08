@@ -1055,7 +1055,7 @@ namespace ME3TweaksCore.Targets
         }
 
         /// <summary>
-        /// Gets a list of installed DLC, sorted by mount priority from lowest to highest. Does not include disabled DLC.
+        /// Gets a list of installed DLC folder names, sorted by mount priority from lowest to highest. Does not include disabled DLC.
         /// </summary>
         /// <param name="includeDisabled"></param>
         /// <returns></returns>
@@ -1084,21 +1084,31 @@ namespace ME3TweaksCore.Targets
         {
             installedDLC ??= GetInstalledDLC();
             var metamap = new CaseInsensitiveDictionary<MetaCMM>();
-            var dlcpath = M3Directories.GetDLCPath(this);
             foreach (var v in installedDLC)
             {
                 if (!includeOfficial && MEDirectories.OfficialDLC(Game).Contains(v)) continue; // This is not a mod
-                var meta = Path.Combine(dlcpath, v, @"_metacmm.txt");
-                MetaCMM mf = null;
-                if (File.Exists(meta))
-                {
-                    mf = new MetaCMM(meta);
-                }
-
+                MetaCMM mf = GetMetaCMMForDLC(v);
                 metamap[v] = mf;
             }
 
             return metamap;
+        }
+
+        /// <summary>
+        /// Retrieves the metadata for the specified DLC if available.
+        /// </summary>
+        /// <param name="dlcName">The name of the DLC for which to retrieve metadata. Cannot be null or empty.</param>
+        /// <returns>A MetaCMM object containing the metadata for the specified DLC if the metadata file exists; otherwise, null.</returns>
+        public MetaCMM GetMetaCMMForDLC(string dlcName)
+        {
+            var dlcpath = M3Directories.GetDLCPath(this);
+            var meta = Path.Combine(dlcpath, dlcName, @"_metacmm.txt");
+            if (File.Exists(meta))
+            {
+                return new MetaCMM(meta);
+            }
+
+            return null;
         }
 
         /// <summary>
