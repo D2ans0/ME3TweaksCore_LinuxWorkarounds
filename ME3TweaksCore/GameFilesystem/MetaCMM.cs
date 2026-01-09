@@ -287,7 +287,7 @@ namespace ME3TweaksCore.GameFilesystem
                         }
                         else if (line.StartsWith(PrefixModDescFeatureLevel))
                         {
-                            ModDescFeatureLevel = float.Parse(line.Substring(PrefixModDescFeatureLevel.Length));
+                            ModDescFeatureLevel = double.Parse(line.Substring(PrefixModDescFeatureLevel.Length));
                         }
                         break;
                 }
