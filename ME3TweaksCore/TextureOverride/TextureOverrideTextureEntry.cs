@@ -25,15 +25,6 @@ namespace ME3TweaksCore.TextureOverride
         /// </summary>
         public const int BTP_COMPRESS_SIZE_MIN = 64 * 64;
 
-        /// <summary>
-        /// Maximum length of a name of a TFC in bytes.
-        /// </summary>
-        private const int TFCNameMaxLength = 64 * 2; // unicode
-        /// <summary>
-        /// Maximum length of a texture IFP in bytes.
-        /// </summary>
-        private const int IFPMaxLength = 256 * 2; // unicode
-
         // SHOULD ONLY CONTAIN TEXTURES!!
         // Examples: TO_BlueOutfit.pcc
         //           TO_A_BaseComponent.pcc
@@ -41,13 +32,13 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Name of package to find this texture in, in the current folder. Can be relative.
         /// </summary>
-        [JsonProperty("sourcepackage")]
+        [JsonProperty(@"sourcepackage")]
         public string CompilingSourcePackage { get; set; }
 
         /// <summary>
         /// Instanced full path of the texture in the source package
         /// </summary>
-        [JsonProperty("textureifp")]
+        [JsonProperty(@"textureifp")]
         public string TextureIFP { get; set; }
 
         // SERIALIZATION =========================================================

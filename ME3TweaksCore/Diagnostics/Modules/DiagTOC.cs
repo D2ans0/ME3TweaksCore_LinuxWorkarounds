@@ -107,7 +107,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
             bool isSubbed = false;
             foreach (TOCBinFile.Entry ent in tbf.GetAllEntries())
             {
-                if (ent.name == "PCConsoleTOC.txt")
+                if (ent.name == @"PCConsoleTOC.txt")
                     continue; // This file is not shipped in most games, nor is it used, so we don't care.
 
                 //Console.WriteLine(index + "\t0x" + ent.offset.ToString("X6") + "\t" + ent.size + "\t" + ent.name);
@@ -133,7 +133,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     if (!isSubbed && notPresentOnDiskCount > 10)
                     {
                         isSubbed = true;
-                        addDiagLine("Click to view more", LogSeverity.SUB);
+                        addDiagLine(@"Click to view more", LogSeverity.SUB);
                     }
                     else
                     {

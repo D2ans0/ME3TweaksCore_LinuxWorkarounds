@@ -199,7 +199,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
                 var backup = BackupService.GetGameBackupPath(target.Game);
                 if (backup != null)
                 {
-                    var globalShaderCacheF = Path.Combine(backup, "BioGame", "CookedPCConsole", "GlobalShaderCache-PC-D3D-SM5.bin");
+                    var globalShaderCacheF = Path.Combine(backup, @"BioGame", @"CookedPCConsole", @"GlobalShaderCache-PC-D3D-SM5.bin");
                     if (File.Exists(globalShaderCacheF))
                     {
                         // Copy to backup

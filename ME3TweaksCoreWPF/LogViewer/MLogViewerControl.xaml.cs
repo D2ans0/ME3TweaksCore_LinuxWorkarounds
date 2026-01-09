@@ -57,7 +57,7 @@ namespace ME3TweaksCoreWPF.LogViewer
             var tempDir = GetLogViewerAssetPath();
             if (tempDir != null)
             {
-                var zipStream = MUtilities.ExtractInternalFileToStream("ME3TweaksCoreWPF.LogViewer.Web.zip", Assembly.GetExecutingAssembly());
+                var zipStream = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCoreWPF.LogViewer.Web.zip", Assembly.GetExecutingAssembly());
                 using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Read))
                 {
                     archive.ExtractToDirectory(tempDir, overwriteFiles: true);
@@ -81,7 +81,7 @@ namespace ME3TweaksCoreWPF.LogViewer
             var assetDir = GetLogViewerAssetPath();
             if (assetDir != null)
             {
-                webView.CoreWebView2.SetVirtualHostNameToFolderMapping("me3tweaks.com", GetLogViewerAssetPath(), CoreWebView2HostResourceAccessKind.Allow);
+                webView.CoreWebView2.SetVirtualHostNameToFolderMapping(@"me3tweaks.com", GetLogViewerAssetPath(), CoreWebView2HostResourceAccessKind.Allow);
                 string script = await File.ReadAllTextAsync(Path.Combine(assetDir, @"modmanager\logservice\shared\jquery-3.5.0.min.js"));
                 await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(script);
             }

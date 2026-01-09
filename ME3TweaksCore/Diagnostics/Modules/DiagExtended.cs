@@ -97,7 +97,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
             if (!foundError)
             {
-                diag.AddDiagLine("All package files opened and decompressed successfully with Legendary Explorer Core.", LogSeverity.GOOD);
+                diag.AddDiagLine(@"All package files opened and decompressed successfully with Legendary Explorer Core.", LogSeverity.GOOD);
             }
         }
     }

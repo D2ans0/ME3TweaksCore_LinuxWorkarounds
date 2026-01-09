@@ -386,7 +386,7 @@ namespace ME3TweaksCore.TextureOverride
 
             // Now port normal textures
             // TO packages will never have textures at the root! So we purposely don't check for that here.
-            foreach (var exp in textures.Where(x => !x.Parent.IsA("TextureCube")))
+            foreach (var exp in textures.Where(x => !x.Parent.IsA(@"TextureCube")))
             {
                 done++;
                 pi.Value = done * 100.0 / textures.Count;
@@ -480,7 +480,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <summary>
         /// Magic for BTP
         /// </summary>
-        private static string MANIFEST_HEADER => "LETEXM"; // Must be ASCII
+        private static string MANIFEST_HEADER => @"LETEXM"; // Must be ASCII
 
         /// <summary>
         /// BTP owner of this header
