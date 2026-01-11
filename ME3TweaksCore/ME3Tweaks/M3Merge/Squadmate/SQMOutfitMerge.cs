@@ -20,6 +20,7 @@ using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.ME3Tweaks.ModManager;
 using ME3TweaksCore.ME3Tweaks.StarterKit.LE2;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
@@ -218,7 +219,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                         continue;
                     }
 
-                    if (metacmm != null && metacmm.ModDescFeatureLevel >= 9.2)
+                    if (metacmm != null && metacmm.ModDescFeatureLevel >= ModDescConsts.MODDESC_VERSION_9_2)
                     {
                         // 9.2 and above: Support extra sqm files.
                         if (Path.GetExtension(fname) == SQUADMATE_MERGE_MANIFEST_EXTENSION)
