@@ -309,7 +309,7 @@ namespace ME3TweaksCore.Objects
                 dlcText += $@"{info.modname}";
                 if (showDLCModName)
                 {
-                    dlcText += $@" {DLCFolderName.Key}";
+                    dlcText += $@" ({DLCFolderName.Key})";
                 }
             }
             else
