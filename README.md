@@ -103,11 +103,6 @@ The project includes a PowerShell script that runs before compilation to prepare
 # Automatically run during build
 .\ME3TweaksCore\Build\preparelocalizations.ps1
 ```
-## License
-
-Copyright 2021-2026 ME3Tweaks
-
-This project is part of the ME3Tweaks software suite. Please refer to the repository for specific license information.
 
 ## Related Projects
 
