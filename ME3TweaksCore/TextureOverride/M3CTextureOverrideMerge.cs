@@ -1,6 +1,7 @@
 ﻿using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
@@ -98,7 +99,7 @@ namespace ME3TweaksCore.TextureOverride
                 // Generate the binary package
                 if (combinedManifest.Textures.Count > 0)
                 {
-                    pi?.Status = "Building texture override package";
+                    pi?.Status = LC.GetString(LC.string_buildingTextureOverridePackage);
                     pi?.Value = 0;
                     pi?.OnUpdate(pi);
                     try
@@ -131,12 +132,12 @@ namespace ME3TweaksCore.TextureOverride
                         {
                             try
                             {
-                                MLog.Information($"Deleting texture override file from game: {tof}");
+                                MLog.Information($@"Deleting texture override file from game: {tof}");
                                 File.Delete(tof);
                             }
                             catch (Exception e)
                             {
-                                MLog.Error($@"Unable to delete TO_ file after merge: {tof}");
+                                MLog.Error($@"Unable to delete TO_ file after merge: {tof}, {e.Message}");
                             }
                         }
                     }

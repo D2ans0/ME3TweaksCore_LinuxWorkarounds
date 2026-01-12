@@ -33,7 +33,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         /// File extension suffix for Bio2DA merge manifest files.
         /// </summary>
         private const string BIO2DA_MERGE_FILE_SUFFIX = @".m3da";
-        
+
         /// <summary>
         /// Block identifier for Bio2DA merge data in the Basegame File Identification Service.
         /// </summary>
@@ -137,7 +137,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         var incompatDLC = filepath.DetermineDLCNameFromPath();
                         var tpmi = TPMIService.GetThirdPartyModInfo(incompatDLC, target.Game);
                         MLog.Error($@"Incompatible mod detected for Bio2DA Merge: {incompatDLC} overrides 2DA merge file {file} at path {filepath}. Bio2DA Merge only can modify basegame files and will not modify DLC files. This mod is breaking the Bio2DA merge system.");
-                        throw new Exception($"'{tpmi?.modname ?? incompatDLC}' is not compatible with the automated Bio2DA Merge feature. Please ensure your mod is up to date and notify the mod developer that mods cannot have DLC overrides of merge targets.");
+                        throw new Exception(LC.GetString(LC.string_interp_bio2daMerge_incompatibleModDetected, tpmi?.modname ?? incompatDLC));
                     }
 
                     // Hash the files before we open them so we can pull the information from Basegame File Identification Service.
@@ -293,7 +293,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                 // still in use, and that would be slow. So that's not really helpful here...
                 if (localize)
                 {
-                    newInfoString = "(Vanilla - all M3DAs reverted)";
+                    newInfoString = LC.GetString(LC.string_vanillaAllM3DAsReverted);
                 }
                 else
                 {
@@ -393,8 +393,8 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
                     var baseTable = baseFile.Exports.FirstOrDefault(x => !x.IsDefaultObject && x.IsA(@"Bio2DA") &&
                                                                          (x.ObjectName.Instanced.CaseInsensitiveEquals(tableName) || // Direct name
-                                                                          //10/31/2024 - Fix targetting _part tables in BDTS tables that we reset
-                                                                         (x.ObjectName.Name.Length > 5 && x.ObjectName.Name.StartsWith(tableName, StringComparison.CurrentCultureIgnoreCase) && x.ObjectName.Name.EndsWith("_part")) // Targetting _part table in BDTS tables
+                                                                                                                                     //10/31/2024 - Fix targetting _part tables in BDTS tables that we reset
+                                                                         (x.ObjectName.Name.Length > 5 && x.ObjectName.Name.StartsWith(tableName, StringComparison.CurrentCultureIgnoreCase) && x.ObjectName.Name.EndsWith(@"_part")) // Targetting _part table in BDTS tables
                                                                          ));
                     if (baseTable == null)
                     {

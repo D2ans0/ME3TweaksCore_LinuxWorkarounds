@@ -40,7 +40,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                         var container = @"Unknown";
                         if (pathChunks[0].CaseInsensitiveEquals(@"CookedPCConsole"))
                         {
-                            container = "Basegame";
+                            container = @"Basegame";
                         }
                         else if (pathChunks.Length > 1)
                         {

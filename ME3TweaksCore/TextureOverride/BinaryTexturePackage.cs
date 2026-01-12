@@ -10,6 +10,7 @@ using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.Classes;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using System;
 using System.Collections.Generic;
@@ -331,7 +332,7 @@ namespace ME3TweaksCore.TextureOverride
             if (crc != Header.MetadataCRC)
             {
                 MLog.Error($@"BTP RECONSTITUTION: The given metadata file was not generated for this BTP: Expected {Header.MetadataCRC:X8}, got {crc:X8}");
-                throw new Exception($"The metadata file {inMetadataFile} is not for this BTP file.");
+                throw new Exception(LC.GetString(LC.string_interp_mismatchedBTMBTP, inMetadataFile));
             }
 
             // CRC matches
@@ -391,7 +392,7 @@ namespace ME3TweaksCore.TextureOverride
                 done++;
                 pi.Value = done * 100.0 / textures.Count;
                 pi.OnUpdate(pi);
-                
+
                 metadataPackage.LoadExport(exp, true); // Load parents too.
                 ReconstituteTexture(btpStream, exp);
                 largeDataSerializer.ExportInto(exp, cache);
@@ -460,7 +461,7 @@ namespace ME3TweaksCore.TextureOverride
             if (texture2D is LightMapTexture2D lm2d)
             {
                 // We stored the lightmap flag in the metadata binary
-                lm2d.LightMapFlags = (ELightMapFlags) BitConverter.ToInt32(exp.GetBinaryData(), 0);
+                lm2d.LightMapFlags = (ELightMapFlags)BitConverter.ToInt32(exp.GetBinaryData(), 0);
             }
 
             exp.WriteBinary(texture2D);
@@ -1190,7 +1191,7 @@ namespace ME3TweaksCore.TextureOverride
         {
             if (guid == Guid.Empty && tfc != @"None")
             {
-                throw new Exception($"Detected invalid TFC reference, empty guid for {tfc}");
+                throw new Exception(LC.GetString(LC.string_interp_btpInvalidTFCReference, tfc));
             }
 
             if (TFCTable.TryGetValue(tfc, out var tfcInfo))
@@ -1207,7 +1208,7 @@ namespace ME3TweaksCore.TextureOverride
             if (tfc.Length > BTPTFCEntry.TFC_NAME_MAX_SIZE)
             {
                 MLog.Error($@"TFC name is too big to serialize to BTP, aborting: {tfc}");
-                throw new Exception($"TFC name is too long to use for the M3 Texture Override system: {tfc}. The maximum length supported is {BTPTFCEntry.TFC_NAME_MAX_SIZE} characters.");
+                throw new Exception(LC.GetString(LC.string_interp_btpTFCNameTooLong, tfc, BTPTFCEntry.TFC_NAME_MAX_SIZE));
             }
 
             tfcInfo = new BTPTFCEntry(this, null)

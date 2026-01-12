@@ -3,6 +3,7 @@ using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
@@ -57,7 +58,7 @@ namespace ME3TweaksCore.TextureOverride
             if (target.Game != Game)
             {
                 MLog.Error($@"Cannot override textures from different games. {Game} <-> {target.Game}");
-                throw new Exception($"Cannot use texture override manifests for different games: {Game} <-> {target.Game}");
+                throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch1, Game, target.Game));
             }
 
             if (this.Textures != null)
@@ -111,23 +112,24 @@ namespace ME3TweaksCore.TextureOverride
                 MLog.Error($@"Texture Override manifest {filePath} game mismatch in {filePath} (file targets {Game}, we are loading for {targetGame}), skipping this file.");
                 if (throwIfFailed)
                 {
-                    throw new Exception($"Texture Override manifest {filePath} targets a different game: The manifest is for {Game}, we are loading for {targetGame}");
+                    throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch1, filePath, Game, targetGame));
                 }
                 return false;
             }
 
-            foreach(var entry in Textures)
+            foreach (var entry in Textures)
             {
                 var fileName = Path.GetFileName(entry.CompilingSourcePackage);
-                if (!fileName.StartsWith(@"TO_")) {
+                if (!fileName.StartsWith(@"TO_"))
+                {
                     MLog.Error($@"Texture Override manifest {filePath} has invalid source package name: {fileName} - files MUST start with 'TO_', skipping this file.");
                     if (throwIfFailed)
                     {
-                        throw new Exception($"Texture Override manifest {filePath} has invalid source package name: {fileName} - files MUST start with 'TO_'");
+                        throw new Exception(LC.GetString(LC.string_interp_toManifestGameMismatch2, filePath, fileName));
                     }
                     return false;
                 }
-            } 
+            }
 
 
             return true;

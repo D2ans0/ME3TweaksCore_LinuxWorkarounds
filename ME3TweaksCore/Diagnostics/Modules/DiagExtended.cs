@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
-using NickStrupat;
 
 namespace ME3TweaksCore.Diagnostics.Modules
 {
@@ -46,7 +45,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
             LogAdvancedTool(@"TestPackageDecompression");
 
             diag.AddDiagLine(@"Package decompression test", LogSeverity.DIAGSECTION);
-            package.UpdateStatusCallback?.Invoke("Testing package decompression");
+            package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_testingPackageDecompression));
 
             var packageList = package.DiagnosticTarget.EnumerateGameFiles(x => x.RepresentsPackageFilePath());
 
@@ -84,7 +83,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                 Interlocked.Increment(ref done);
                 var progress = (int)(done * 100.0 / packageList.Count);
-                package.UpdateStatusCallback?.Invoke("Testing package decompression" + $@" {progress}%");
+                package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_testingPackageDecompression) + $@" {progress}%");
                 package.UpdateProgressCallback?.Invoke(progress);
             });
 
@@ -93,7 +92,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
             MLog.Information($@"Decompression test took {sw.ElapsedMilliseconds}ms");
 #endif
 
-            package.UpdateStatusCallback?.Invoke("Testing package decompression" + $@" 100%");
+            package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_testingPackageDecompression) + $@" 100%");
 
             if (!foundError)
             {

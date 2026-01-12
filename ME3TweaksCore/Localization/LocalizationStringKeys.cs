@@ -275,5 +275,21 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_2damerge_invalidSourceObjectIsNot2DA = "string_interp_2damerge_invalidSourceObjectIsNot2DA";
 		public const string string_interp_2damerge_invalidCouldNotFindTargetTable = "string_interp_2damerge_invalidCouldNotFindTargetTable";
 		public const string string_interp_2damerge_invalidNotAVanillaTable = "string_interp_2damerge_invalidNotAVanillaTable";
+		public const string string_interp_bio2daMerge_incompatibleModDetected = "string_interp_bio2daMerge_incompatibleModDetected";
+		public const string string_vanillaAllM3DAsReverted = "string_vanillaAllM3DAsReverted";
+		public const string string_testingPackageDecompression = "string_testingPackageDecompression";
+		public const string string_interp_mismatchedBTMBTP = "string_interp_mismatchedBTMBTP";
+		public const string string_interp_btpInvalidTFCReference = "string_interp_btpInvalidTFCReference";
+		public const string string_interp_btpTFCNameTooLong = "string_interp_btpTFCNameTooLong";
+		public const string string_buildingTextureOverridePackage = "string_buildingTextureOverridePackage";
+		public const string string_interp_buildingTextureOverridePackage = "string_interp_buildingTextureOverridePackage";
+		public const string string_interp_btpBuildFailedSourceTextureMissing = "string_interp_btpBuildFailedSourceTextureMissing";
+		public const string string_interp_toCouldNotFindIFP = "string_interp_toCouldNotFindIFP";
+		public const string string_interp_toInvalidTexture = "string_interp_toInvalidTexture";
+		public const string string_interp_toManifestGameMismatch1 = "string_interp_toManifestGameMismatch1";
+		public const string string_interp_toManifestGameMismatch2 = "string_interp_toManifestGameMismatch2";
+		public const string string_interp_toInvalidSourcePackageName = "string_interp_toInvalidSourcePackageName";
+		public const string string_interp_gsInvalidHeader = "string_interp_gsInvalidHeader";
+		public const string string_interp_gsNotValidShader = "string_interp_gsNotValidShader";
 	}
 }

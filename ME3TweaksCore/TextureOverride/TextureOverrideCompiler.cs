@@ -2,9 +2,10 @@
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal;
-using LegendaryExplorerCore.Unreal.ObjectInfo;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
+using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
 using System;
 using System.Collections.Concurrent;
@@ -13,8 +14,8 @@ using System.IO;
 using System.IO.Hashing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -82,7 +83,7 @@ namespace ME3TweaksCore.TextureOverride
             var BTP = new BinaryTexturePackage(null);
 
             // Add No-TFC to TFC table at index 0
-            BTP.TFCTable.GetTFCTableIndex("None", Guid.Empty, null);
+            BTP.TFCTable.GetTFCTableIndex(@"None", Guid.Empty, null);
 
             // Setup header (first pass)
             var fnvInput = $@"{tom.Game}{DLCName}";
@@ -94,7 +95,7 @@ namespace ME3TweaksCore.TextureOverride
             var done = 0;
 
             pi?.Value = 0;
-            pi?.Status = $"Building texture override package";
+            pi?.Status = LC.GetString(LC.string_interp_buildingTextureOverridePackage);
             pi?.OnUpdate(pi);
 
             // Preallocate space for texture entries
@@ -142,7 +143,7 @@ namespace ME3TweaksCore.TextureOverride
                     if (!File.Exists(newPath))
                     {
                         MLog.Error($@"Referenced source package {newPath} not found at {newPath} - aborting BTP build");
-                        throw new Exception($"sourcepackage '{texture.CompilingSourcePackage}' for texture '{texture.TextureIFP}' does not exist, BTP cannot be compiled.");
+                        throw new Exception(LC.GetString(LC.string_interp_btpBuildFailedSourceTextureMissing, texture.CompilingSourcePackage, texture.TextureIFP));
                     }
 
                     MLog.Information($@"BTP build: Switching to new source package {newPath}");

@@ -1,20 +1,15 @@
-﻿using CommunityToolkit.HighPerformance.Helpers;
-using LegendaryExplorerCore.Compression;
-using LegendaryExplorerCore.Helpers;
-using LegendaryExplorerCore.Packages;
+﻿using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Packages.CloningImportingAndRelinking;
 using LegendaryExplorerCore.Unreal;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using LegendaryExplorerCore.Unreal.ObjectInfo;
+using ME3TweaksCore.Localization;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -64,13 +59,13 @@ namespace ME3TweaksCore.TextureOverride
             var texture = package.FindExport(TextureIFP);
             if (texture == null)
             {
-                throw new Exception($"Could not find textureifp {TextureIFP} in package {package.FilePath}");
+                throw new Exception(LC.GetString(LC.string_interp_toCouldNotFindIFP, TextureIFP, package.FilePath));
             }
 
             // Make sure it's Texture2D
             if (!texture.IsA(@"Texture2D"))
             {
-                throw new Exception($"{TextureIFP} is not a texture object in {package.FilePath} ({texture.ClassName})");
+                throw new Exception(LC.GetString(LC.string_interp_toInvalidTexture, TextureIFP, package.FilePath, texture.ClassName));
             }
 
             // Read metadata about texture.
@@ -82,7 +77,7 @@ namespace ME3TweaksCore.TextureOverride
             var props = texture.GetProperties();
             var tfc = props.GetProp<NameProperty>(@"TextureFileCacheName");
             var tfcGuidProp = props.GetProp<StructProperty>(@"TFCFileGuid");
-            var format = props.GetProp<EnumProperty>("Format"); // Default would be PF_Unknown according to enum
+            var format = props.GetProp<EnumProperty>(@"Format"); // Default would be PF_Unknown according to enum
             var lodBias = props.GetProp<IntProperty>(@"InternalFormatLODBias")?.Value ?? 0;
             var neverStream = props.GetProp<BoolProperty>(@"NeverStream")?.Value ?? false;
             var srgb = props.GetProp<BoolProperty>(@"sRGB")?.Value ?? true; // Default is true on Texture class

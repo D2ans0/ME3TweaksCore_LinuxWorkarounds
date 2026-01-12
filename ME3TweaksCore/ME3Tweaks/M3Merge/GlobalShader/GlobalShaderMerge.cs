@@ -1,18 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using LegendaryExplorerCore.GameFilesystem;
+﻿using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using LegendaryExplorerCore.Unreal.BinaryConverters;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.ME3Tweaks.ModManager;
 using ME3TweaksCore.Services.Backup;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
 using ME3TweaksCore.Targets;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
 {
@@ -105,13 +106,13 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
                             if (magic != 0x43425844)
                             {
                                 MLog.Error($@"Invalid m3gs file: File doesn't appear to be a compiled shader file");
-                                throw new Exception($"Invalid m3gs file: {relPath}. File has invalid header.");
+                                throw new Exception(LC.GetString(LC.string_interp_gsInvalidHeader, relPath));
                             }
                         }
                         else
                         {
                             MLog.Error($@"Invalid m3gs file: File is not a valid compiled shader");
-                            throw new Exception($"Invalid m3gs file: {relPath}. File is not a valid compiled shader.");
+                            throw new Exception(LC.GetString(LC.string_interp_gsNotValidShader, relPath));
                         }
                         shaders[shaderIndex].ShaderByteCode = shaderCode;
                         recordMerge($@"{dlc}-{Path.GetFileName(gs)}");
