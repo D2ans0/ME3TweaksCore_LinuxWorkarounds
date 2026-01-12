@@ -404,7 +404,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
 
                     // Check basetable is actually a vanilla table
                     // 10/31/2024 - Strip _part so we can successfully target BDTS tables
-                    var baseTableName = baseTable.ObjectName.Name.EndsWith("_part") ? baseTable.ObjectName.Name[..^5] : baseTable.ObjectName.Instanced;
+                    var baseTableName = baseTable.ObjectName.Name.EndsWith(@"_part") ? baseTable.ObjectName.Name[..^5] : baseTable.ObjectName.Instanced;
                     if (!packageContainer.VanillaTableNames.Contains(baseTableName, StringComparer.InvariantCultureIgnoreCase))
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - this is not a vanilla table. Bio2DA merge does not work with non-vanilla tables.");

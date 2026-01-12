@@ -37,7 +37,7 @@ namespace ME3TweaksCore.Helpers
         // Posted by jdphenix, modified by community. See post 'Timeline' for change history
         // Retrieved 2025-12-13, License - CC BY-SA 3.0
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport(@"kernel32.dll", SetLastError = true)]
         private static extern bool GetFileInformationByHandle(
             IntPtr hFile,
             out BY_HANDLE_FILE_INFORMATION lpFileInformation);
@@ -46,7 +46,7 @@ namespace ME3TweaksCore.Helpers
         // Posted by jdphenix, modified by community. See post 'Timeline' for change history
         // Retrieved 2025-12-13, License - CC BY-SA 3.0
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [DllImport(@"kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr CreateFile(
             [MarshalAs(UnmanagedType.LPTStr)] string filename,
             [MarshalAs(UnmanagedType.U4)] FileAccess access,
@@ -60,7 +60,7 @@ namespace ME3TweaksCore.Helpers
         // Posted by jdphenix, modified by community. See post 'Timeline' for change history
         // Retrieved 2025-12-13, License - CC BY-SA 3.0
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [DllImport(@"kernel32.dll", SetLastError = true)]
         [SuppressUnmanagedCodeSecurity]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool CloseHandle(IntPtr hObject);

@@ -217,13 +217,13 @@ namespace ME3TweaksCore.Diagnostics.Support
             }
 
             // Only table cells is added, row is set after
-            string rowClass = "row-mod";
+            string rowClass = @"row-mod";
             if (IsOfficialDLC)
             {
-                rowClass = "row-officialdlc";
+                rowClass = @"row-officialdlc";
                 addCell(DLCFolderName);
                 addCell(ModName); // Set when loading the struct object
-                addCell(""); // Version
+                addCell(@""); // Version
                 addCell(MountPriority.ToString(), true);
                 addCell(@"BioWare");
                 addCell(@"");

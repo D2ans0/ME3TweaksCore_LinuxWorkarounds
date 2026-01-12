@@ -1,5 +1,6 @@
 ﻿namespace ME3TweaksCore.ME3Tweaks.ModManager
 {
+    // You can view references to these to determine feature level changes
     /// <summary>
     /// Contains constants for different versions of moddesc. This allows the editor tools to more easily find features that only apply to certain
     /// versions of moddesc.
