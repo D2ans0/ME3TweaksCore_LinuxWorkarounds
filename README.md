@@ -5,19 +5,6 @@
 
 ME3TweaksCore is a .NET library providing core functionality across various ME3Tweaks software tools for modding the Mass Effect games. It does not provide the mod management functionality provided by ME3Tweaks Mod Manager.
 
-## Table of Contents
-
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Key Components](#key-components)
-- [Technologies](#technologies)
-- [Usage](#usage)
-- [Building](#building)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Features
 
 ### Core Library (ME3TweaksCore)
