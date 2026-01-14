@@ -295,23 +295,18 @@ namespace ME3TweaksCore.Helpers
         public static bool IsWineDetected()
         {
             // these values are normally set whenever in a wine prefix
-            RegistryKey WineDbgCrashDialog = Registry.CurrentUser.OpenSubKey(@"Software\Wine\WineDbg");
-            RegistryKey DebugRelayExclude = Registry.CurrentUser.OpenSubKey(@"Software\Wine\Debug");
+            using (RegistryKey WineDbgCrashDialog = Registry.CurrentUser.OpenSubKey(@"Software\Wine\WineDbg"))
+            using (RegistryKey DebugRelayExclude = Registry.CurrentUser.OpenSubKey(@"Software\Wine\Debug"))
+            {
             Version WineVersion = WineGetVersion();
-
             // None of these should be set if running in a real Windows environment
-            if (WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null)
-            {
-                return true;
+            return WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null;
             }
-            else
-            {
-                return false;
-            }
+
         }
 
 
-        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr wine_get_version();
 
         /// <summary>
@@ -332,7 +327,7 @@ namespace ME3TweaksCore.Helpers
         }
 
 
-        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern void wine_get_host_version(out IntPtr sysname, out IntPtr release);
 
         /// <summary>
