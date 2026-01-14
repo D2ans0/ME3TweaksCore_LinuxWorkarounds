@@ -299,7 +299,7 @@ namespace ME3TweaksCore.Helpers
             RegistryKey DebugRelayExclude = Registry.CurrentUser.OpenSubKey(@"Software\Wine\Debug");
             Version WineVersion = WineGetVersion();
 
-            // check against both keys
+            // None of these should be set if running in a real Windows environment
             if (WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null)
             {
                 return true;
@@ -315,9 +315,9 @@ namespace ME3TweaksCore.Helpers
         private static extern IntPtr wine_get_version();
 
         /// <summary>
-        /// Calls wine_get_version converts it to a Version type
+        /// Get Wine version
         /// </summary>
-        /// <returns>Version, or null if the call triggers an exception</returns>
+        /// <returns>Version if available, otherwise null</returns>
         public static Version WineGetVersion()
         {
             try
@@ -336,7 +336,7 @@ namespace ME3TweaksCore.Helpers
         private static extern void wine_get_host_version(out IntPtr sysname, out IntPtr release);
 
         /// <summary>
-        /// Calls wine_get_host_version and sets host OS type and kernel version.
+        /// Gets both host kernel name and version
         /// <para>
         ///     Parameters will be set to null if function is not available.<br />
         ///     This generally means the host is Windows, or Wine is hiding its version.
