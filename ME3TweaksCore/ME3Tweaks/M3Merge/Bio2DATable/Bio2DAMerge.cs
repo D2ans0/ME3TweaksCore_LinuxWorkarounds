@@ -99,11 +99,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             MLog.Information($@"Performing Bio2DA Merge for game: {target.TargetPath}");
             var dlcMountsInOrder = MELoadedDLC.GetDLCNamesInMountOrder(target.Game, target.TargetPath);
 
-            // For BGFIS
-            bool mergedAny = false;
-            string recordedMergeName = @"";
-
-
             // Map: Filepath -> list of applied m3da filenames
             var recordedApplications = new CaseInsensitiveDictionary<List<string>>();
             void recordM3DAApplication(IMEPackage package, string displayName)
@@ -166,10 +161,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                         EntryImporter.ImportAndRelinkEntries(EntryImporter.PortingOption.ReplaceSingularWithRelink, exp,
                             file, matchingExp, true, new RelinkerOptionsPackage(), out _);
 
+#if DEBUG
                         if (matchingExp.DataChanged)
                         {
                             Debug.WriteLine($@"Reset table: {matchingExp.InstancedFullPath} in {file.FileNameNoExtension}");
                         }
+#endif
                     }
                 }
             }
@@ -371,7 +368,6 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - base name of object does not end with _part");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidTableNameMissingPart, table));
-                        return false;
                     }
 
                     var tableName = objName.Name.Substring(0, objName.Name.Length - 5); // Remove _part. The table name should not be indexed... probably
@@ -381,14 +377,12 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - could not find table with that instanced full path in package '{modPackagePath}'");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidCouldNotFindSourceTableExport, table, modPackagePath));
-                        return false;
                     }
 
                     if (!modTable.IsA(@"Bio2DA"))
                     {
                         MLog.Error($@"Bio2DA merge 'mergetables' value is invalid: {table} - export is not a Bio2DA or subclass. It was: {modTable.ClassName}");
                         throw new Exception(LC.GetString(LC.string_interp_2damerge_invalidSourceObjectIsNot2DA, table, modTable.ClassName));
-                        return false;
                     }
 
                     var baseTable = baseFile.Exports.FirstOrDefault(x => !x.IsDefaultObject && x.IsA(@"Bio2DA") &&
