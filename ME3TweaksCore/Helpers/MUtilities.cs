@@ -298,13 +298,11 @@ namespace ME3TweaksCore.Helpers
             using (RegistryKey WineDbgCrashDialog = Registry.CurrentUser.OpenSubKey(@"Software\Wine\WineDbg"))
             using (RegistryKey DebugRelayExclude = Registry.CurrentUser.OpenSubKey(@"Software\Wine\Debug"))
             {
-            Version WineVersion = WineGetVersion();
-            // None of these should be set if running in a real Windows environment
-            return WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null;
+                Version WineVersion = WineGetVersion();
+                // None of these should be set if running in a real Windows environment
+                return WineVersion != null || WineDbgCrashDialog != null || DebugRelayExclude != null;
             }
-
         }
-
 
         [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr wine_get_version();
