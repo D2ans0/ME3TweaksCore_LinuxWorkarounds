@@ -236,7 +236,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader
                         isVanilla = false;
                     }
 
-                    if (isVanilla && MUtilities.CalculateHash(sharedBackupShaderCachePath) != info.hash)
+                    if (isVanilla && MUtilities.CalculateHash(gameShaderCache) != info.hash)
                     {
                         // Cannot use this file.
                         isVanilla = false;
