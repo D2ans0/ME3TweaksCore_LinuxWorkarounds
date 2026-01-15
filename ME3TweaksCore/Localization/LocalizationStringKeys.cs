@@ -48,6 +48,7 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_backingUpSinglePercentage = "string_interp_backingUpSinglePercentage";
 		public const string string_errorCreatingBackup = "string_errorCreatingBackup";
 		public const string string_interp_errorCreatingBackupX = "string_interp_errorCreatingBackupX";
+		public const string string_dialog_backupUnableToDetermineFreeSpace = "string_dialog_backupUnableToDetermineFreeSpace";
 		public const string string_installedByModManager = "string_installedByModManager";
 		public const string string_interp_installedByX = "string_interp_installedByX";
 		public const string string_notInstalledByModManager = "string_notInstalledByModManager";

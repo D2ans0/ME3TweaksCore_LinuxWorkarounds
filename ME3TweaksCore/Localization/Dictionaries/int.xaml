@@ -55,7 +55,9 @@
     <system:String x:Key="string_errorCreatingBackup">Error creating backup</system:String>
     <system:String x:Key="string_interp_errorCreatingBackupX">An error occurred backing up the game: {0}. The last file attempted to be processed was: {1}.</system:String>
     <!-- 0={Error message} 1={The last processed filepath} -->
-
+    <system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Unable to determine free space for backup location: {0}</system:String>
+    <!-- 0={Backup path} -->
+    
     <!-- Installation Information -->
     <system:String x:Key="string_installedByModManager">Installed by Mod Manager</system:String>
     <system:String x:Key="string_interp_installedByX">Installed by {0}</system:String>

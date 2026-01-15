@@ -109,7 +109,7 @@ namespace ME3TweaksCore.Services.Backup
 
             GameLanguage[] allGameLangauges = targetToBackup.Game != MEGame.LELauncher ? GameLanguage.GetLanguagesForGame(targetToBackup.Game) : null;
             GameLanguage[] selectedLanguages = null;
-            
+
             if (!targetToBackup.IsCustomOption)
             {
                 MLog.Information($@"PerformBackup() on {targetToBackup.TargetPath}");
@@ -605,7 +605,7 @@ namespace ME3TweaksCore.Services.Backup
                 {
                     MLog.Error($@"Failed to get free space for backup path: {backupPath}");
                     EndBackup();
-                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotCreateBackup), $"Unable to determine free space for backup location: {backupPath}");
+                    BlockingActionCallback?.Invoke(LC.GetString(LC.string_cannotCreateBackup), LC.GetString(LC.string_dialog_backupUnableToDetermineFreeSpace, backupPath));
                     return false;
                 }
 
