@@ -82,6 +82,9 @@
 	<system:String x:Key="string_gameNotInstalled">Gioco non installato</system:String>
 	<system:String x:Key="string_gameNotInstalledRunOnce">Gioco non installato. Avvialo almeno una volta per assicurarti che sia configurato completamente</system:String>
 	<system:String x:Key="string_cantCreateBackup">Impossibile creare il backup</system:String>
+	<system:String x:Key="string_interp_mismatchedBTMBTP">Il file di metadati {0} non è per questo file BTP.</system:String>
+	<system:String x:Key="string_interp_btpInvalidTFCReference">Rilevato riferimento TFC non valido, guid vuoto per {0}</system:String>
+	<system:String x:Key="string_interp_btpTFCNameTooLong">Il nome del TFC è troppo lungo per l'utilizzo nel sistema di M3 Texture Override: {0}. La lunghezza massima supportata è di {1} caratteri.</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidTargetFile">Il merge Bio2DA 'packagefile' non è valido:  {0} - impossibile effettuare il merge nei file 2DA non appartenenti al gioco base/di Impatto Imminente</system:String>
 	<system:String x:Key="string_interp_2damerge_couldNotFindTarget">Il merge Bio2DA 'packagefile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookedPCConsole del gioco base obiettivo</system:String>
 	<system:String x:Key="string_interp_2damerge_couldNotFindSourcePackage">Il merge Bio2DA 'mergepackagegile' non è valido: {0} - impossibile trovare il file all'interno della cartella CookedPCConsole della mod</system:String>
@@ -90,8 +93,11 @@
 	<system:String x:Key="string_interp_2damerge_invalidSourceObjectIsNot2DA">Il merge Bio2DA 'mergetables' non è valido: {0} - l'esportazione non è un Bio2DA o una sottoclasse. Era: {1}</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidCouldNotFindTargetTable">Il merge Bio2DA 'mergetables' non è valido: {0} - impossibile trovare una tabella del gioco base con nome base '{1}' all'interno del package '{2}'</system:String>
 	<system:String x:Key="string_interp_2damerge_invalidNotAVanillaTable">Il merge Bio2DA 'mergetables' non è valido: {0} - questa non è una tabella vanilla. La merge Bio2DA non funziona con tabelle non vanilla</system:String>
+	<system:String x:Key="string_interp_bio2daMerge_incompatibleModDetected">'{0}' non è compatibile con la funzionalità di Merge Bio2DA automatico. Assicurati che la tua mod sia aggiornata e avvisa il suo sviluppatore che le mod non posso avere Override DLC dei merge target.</system:String>
+	<system:String x:Key="string_vanillaAllM3DAsReverted">(Vanilla - ripristinati tutti i M3DA)</system:String>
 	<system:String x:Key="string_interp_XDoesNotSupportGameY">{0} non supporta il gioco {1}</system:String>
 	<system:String x:Key="string_interp_copyDidntWorkX">Il file di destinazione non esiste dopo la copia del file: {0}</system:String>
+	<system:String x:Key="string_testingPackageDecompression">Test della decompressione dei pacchetti in corso</system:String>
 	<system:String x:Key="string_interp_failedToLoadPackageXY">Impossibile caricare il package {0}: {1}</system:String>
 	<system:String x:Key="string_generatingMod">Generazione mod in corso</system:String>
 	<system:String x:Key="string_interp_dok_mustContainDescriptorX">Le struct DLCOptionKey devono contenere un descrittore di nome '{0}'</system:String>
@@ -126,6 +132,7 @@
 	<system:String x:Key="string_interp_backingUpSinglePercentage">Backup di {0} {1}%</system:String>
 	<system:String x:Key="string_errorCreatingBackup">Errore durante la creazione del backup</system:String>
 	<system:String x:Key="string_interp_errorCreatingBackupX">C'è stato un errore durante il backup del gioco: {0}. L'ultimo file che si è cercato di processare è stato: {1}.</system:String>
+	<system:String x:Key="string_dialog_backupUnableToDetermineFreeSpace">Impossibile determinare lo spazio libero per la destinazione del backup: {0}</system:String>
 	<system:String x:Key="string_cannotRestoreGame">Impossibile ripristinare il gioco</system:String>
 	<system:String x:Key="string_interp_cannotRestoreGameToGameWhileRunning">Impossibile ripristinare {0} quando una sua istanza è in esecuzione.</system:String>
 	<system:String x:Key="string_interp_restoringWillDeleteEverythingTitle">Ripristinare {0} eliminerà l'installazione esistente</system:String>
@@ -169,6 +176,8 @@
 	<system:String x:Key="string_binkw32ASIBypass">Bwink32 ASI Bypass</system:String>
 	<system:String x:Key="string_bink2w64ASILoader">Bink2w64 ASI Loader</system:String>
 	<system:String x:Key="string_deleting">Rimozione</system:String>
+	<system:String x:Key="string_interp_gsInvalidHeader">File m3gs non valido: {0}. Il file ha un header non valido.</system:String>
+	<system:String x:Key="string_interp_gsNotValidShader">File m3gs non valido: {0}. Il file non è uno shader compilato valido.</system:String>
 	<system:String x:Key="string_installedByModManager">Installato con il Mod Manager</system:String>
 	<system:String x:Key="string_interp_installedByX">Installato con {0}</system:String>
 	<system:String x:Key="string_notInstalledByModManager">Non installato con il Mod Manager</system:String>
@@ -209,6 +218,7 @@
 	<system:String x:Key="string_interp_serverRejectedLogUpload">Il server ha rifiutato il caricamento: {0}</system:String>
 	<system:String x:Key="string_interp_errorUploadingLog">Log di Errore durante il caricamento: {0}</system:String>
 	<system:String x:Key="string_interp_currentLog">{0} - {1} - LOG CORRENTE</system:String>
+	<system:String x:Key="string_buildingTextureOverridePackage">Compilazione del package di texture override</system:String>
 	<system:String x:Key="string_unpackingDLC">Spacchettamento del DLC in corso</system:String>
 	<system:String x:Key="string_checkingGameData">Controllo dei file di gioco in corso</system:String>
 	<system:String x:Key="string_scanningGameTextures">Scansione delle texture del gioco in corso</system:String>
@@ -269,5 +279,12 @@
 	<system:String x:Key="string_skai_failedToCompileClassMSM">Impossibile compilare {0} per il package dati ModSettingsMenu: {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unopenedParenthsisFound">Errore durante l'analisi della lista divisa con parentesi: Trovata una parentesi chiusa non corrispondente a un'altra aperta alla posizione {0} della stringa {1}</system:String>
 	<system:String x:Key="string_interp_ssp_unclosedParenthesisFound">Trovata una parentesi di apertura senza corrispondente di chiusura durante l'analisi della lista divisa con parentesi in {0}</system:String>
+	<system:String x:Key="string_interp_buildingTextureOverridePackage">Compilazione del package di texture override</system:String>
+	<system:String x:Key="string_interp_btpBuildFailedSourceTextureMissing">Il sourcepackage '{0}' per la texture '{1}' non esiste, il BTP non può essere compilato.</system:String>
+	<system:String x:Key="string_interp_toManifestGameMismatch1">Impossibile usare i manifest dei texture override per giochi diversi: {0} &gt;-&lt; {1}</system:String>
+	<system:String x:Key="string_interp_toManifestGameMismatch2">Il manifest del Texture Override {0} fa riferimento a un gioco diverso: Il manifest è per {1}, sta venendo caricato per {2}</system:String>
+	<system:String x:Key="string_interp_toInvalidSourcePackageName">Il manifest del Texture Override {0} ha un nome del source package non valido: {1} - i file DEVONO iniziare con 'TO_'</system:String>
+	<system:String x:Key="string_interp_toCouldNotFindIFP">Impossibile trovare il textureifp {0} nel package {1}</system:String>
+	<system:String x:Key="string_interp_toInvalidTexture">{0} non è un oggetto texture in {1} ({2})</system:String>
 	<system:String x:Key="string_checkingBackup">Controllo del backup in corso</system:String>
 </ResourceDictionary>
