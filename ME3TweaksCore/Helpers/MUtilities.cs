@@ -304,7 +304,7 @@ namespace ME3TweaksCore.Helpers
             }
         }
 
-        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+        [DllImport(@"ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr wine_get_version();
 
         /// <summary>
@@ -325,7 +325,7 @@ namespace ME3TweaksCore.Helpers
         }
 
 
-        [DllImport("ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+        [DllImport(@"ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern void wine_get_host_version(out IntPtr sysname, out IntPtr release);
 
         /// <summary>
@@ -1013,7 +1013,7 @@ namespace ME3TweaksCore.Helpers
         /// <param name="lpTotalNumberOfBytes">The total number of bytes on the disk.</param>
         /// <param name="lpTotalNumberOfFreeBytes">The total number of free bytes on the disk.</param>
         /// <returns>True if the function succeeds, false otherwise.</returns>
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DllImport(@"kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,
             out ulong lpFreeBytesAvailable,

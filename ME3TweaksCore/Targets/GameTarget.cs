@@ -40,6 +40,11 @@ namespace ME3TweaksCore.Targets
         public MEGame Game { get; }
         public string TargetPath { get; }
         public bool RegistryActive { get; set; }
+
+        /// <summary>
+        /// If this game target detected cmm_vanilla and should not be loaded for that specific reason
+        /// </summary>
+        public bool IsBackup { get; private set; }
         public string GameSource { get; private set; }
         public string ExecutableHash { get; private set; }
 
@@ -701,7 +706,11 @@ namespace ME3TweaksCore.Targets
 
             if (!ignoreCmmVanilla)
             {
-                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla"))) return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla")))
+                {
+                    IsBackup = true;
+                    return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                }
             }
 
             IsValid = true;
