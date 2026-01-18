@@ -637,7 +637,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
             {
                 if (selectedDiagnosticTarget.Game.IsLEGame())
                 {
-                    if (!leInvalidLodsFound && kvp.Value != null)
+                    if (!leInvalidLodsFound && !string.IsNullOrWhiteSpace(kvp.Value))
                     {
                         leInvalidLodsFound = true; // So we don't print multiple times
                         addDiagLine(@"Detected LOD settings configured in the LOD files - do not set these in Legendary Edition!", LogSeverity.FATAL);
