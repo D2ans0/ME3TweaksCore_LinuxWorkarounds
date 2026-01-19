@@ -307,6 +307,15 @@ namespace ME3TweaksCore.Helpers
         [DllImport(@"ntdll.dll", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr wine_get_version();
 
+        [DllImport(@"kernel32.dll", SetLastError = true)]
+        private static extern IntPtr LoadLibrary(string lpFileName);
+
+        [DllImport(@"kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+        [DllImport(@"kernel32.dll", SetLastError = true)]
+        private static extern bool FreeLibrary(IntPtr hModule);
+
         /// <summary>
         /// Get Wine version
         /// </summary>
@@ -315,8 +324,32 @@ namespace ME3TweaksCore.Helpers
         {
             try
             {
-                var v = new Version(Marshal.PtrToStringAnsi(wine_get_version()));
-                return v;
+#if DEBUG
+                // This is in if debug so it doesn't breakpoint in debug builds on Windows 
+                // First check if the wine_get_version function exists in ntdll.dll
+                IntPtr ntdllModule = LoadLibrary(@"ntdll.dll");
+                if (ntdllModule == IntPtr.Zero)
+                    return null;
+#endif
+                try
+                {
+#if DEBUG
+                    IntPtr procAddress = GetProcAddress(ntdllModule, @"wine_get_version");
+                    if (procAddress == IntPtr.Zero)
+                    {
+                        // Function doesn't exist (not running under Wine)
+                        return null;
+                    }
+#endif
+                    var v = new Version(Marshal.PtrToStringAnsi(wine_get_version()));
+                    return v;
+                }
+                finally
+                {
+#if DEBUG
+                    FreeLibrary(ntdllModule);
+#endif
+                }
             }
             catch
             {
