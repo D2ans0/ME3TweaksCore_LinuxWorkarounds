@@ -346,7 +346,9 @@ namespace ME3TweaksCore.Helpers
                 }
                 finally
                 {
+#if DEBUG
                     FreeLibrary(ntdllModule);
+#endif
                 }
             }
             catch
