@@ -33,7 +33,7 @@ namespace ME3TweaksCore.Helpers
         //Step 1: https://stackoverflow.com/questions/2435894/net-how-do-i-check-for-illegal-characters-in-a-path
         private static string RemoveSpecialCharactersUsingCustomMethod(this string expression, bool removeSpecialLettersHavingASign = true, bool allowPeriod = false)
         {
-            var newCharacterWithSpace = " ";
+            var newCharacterWithSpace = @" ";
             var newCharacter = "";
 
             // Return carriage handling

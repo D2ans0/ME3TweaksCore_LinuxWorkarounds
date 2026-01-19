@@ -408,6 +408,8 @@
     <!-- 0={export name} 1={list of log messages} -->
     <system:String x:Key="string_interp_fileLibInitFailedPlotManager">FileLib for PlotManagerSync could not initialize: {0}</system:String>
     <!-- 0={Newline separated list of errors} -->
+    <system:String x:Key="string_dialog_invalidConditionalNumberSourceMod">Conditional {0} is not a valid number for use. Source mod: {1}</system:String>
+    <!-- 0={Number} 1={Mod name} -->
 
     <!-- Library Consumer -->
     <system:String x:Key="string_buildNotSigned">Build not signed</system:String>
