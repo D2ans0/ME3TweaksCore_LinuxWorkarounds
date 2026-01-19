@@ -232,8 +232,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email
             bool initialized = fl.Initialize(usop);
             if (!initialized)
             {
-                throw new Exception(
-                    $@"FileLib for script update could not initialize, cannot install conditionals");
+                throw new Exception($@"FileLib for email merge script update could not initialize, cannot install conditionals");
             }
 
             #region Sequence Exports

@@ -243,7 +243,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
             var metaMaps = target.GetMetaMappedInstalledDLC(false);
             var uiName = metaMaps[dlc]?.ModName ??
                          TPMIService.GetThirdPartyModInfo(dlc, target.Game)?.modname ?? dlc;
-            
+
             if (!combinedNames.Contains(uiName))
             {
                 combinedNames.Add(uiName);
@@ -283,7 +283,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                                     { @"DLCName", dlc }
                                 });
                             sb = null;
-                            throw new Exception($"Conditional {num} is not a valid number for use. Source mod: {uiName}");
+                            throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
                         }
 
                         if (num.ToString().Length != currentFuncNum.Length)
@@ -297,7 +297,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                                 });
 
                             sb = null;
-                            throw new Exception($"Conditional {num} is not a valid number for use. Source mod: {uiName}");
+                            throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
                         }
                     }
                     else
@@ -312,7 +312,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager
                                 { @"DLCName", dlc }
                             });
                         sb = null;
-                        throw new Exception($"Conditional {num} is not a valid number for use. Source mod: {uiName}");
+                        throw new Exception(LC.GetString(LC.string_dialog_invalidConditionalNumberSourceMod, num, uiName));
                     }
                 }
                 else
