@@ -32,7 +32,7 @@ namespace ME3TweaksCore.NativeMods
         /// <returns></returns>
         public static string ReadDllDescription(string filepath)
         {
-            string retInfo = LC.GetString(LC.string_unknownASIDescription);
+            string retInfo = LC.GetString(LC.string_unknownASIDescription) + "\n";
             var info = FileVersionInfo.GetVersionInfo(filepath);
             if (!string.IsNullOrWhiteSpace(info.ProductName))
             {
@@ -49,7 +49,12 @@ namespace ME3TweaksCore.NativeMods
                 retInfo += '\n' + LC.GetString(LC.string_interp_companyX, info.CompanyName.Trim());
             }
 
-            return retInfo;
+            if (!string.IsNullOrWhiteSpace(info.ProductVersion))
+            {
+                retInfo += '\n' + $"Version: {info.ProductVersion.Trim()}";
+            }
+
+            return retInfo.Trim();
         }
     }
 }
