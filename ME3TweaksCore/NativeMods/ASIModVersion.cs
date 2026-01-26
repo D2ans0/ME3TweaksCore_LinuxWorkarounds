@@ -49,6 +49,25 @@ namespace ME3TweaksCore.NativeMods
         /// The description of this ASI
         /// </summary>
         public string Description { get; internal set; }
+
+        /// <summary>
+        /// Description but with the newlines \\n replaced with \n.
+        /// </summary>
+        public string DescriptionFormatted
+        {
+            get
+            {
+                if (Description == null)
+                {
+                    return @"";
+                }
+
+                // Convert actual \n to newlines.
+                return Description.Replace(@"\n", "\n");
+
+            }
+        }
+
         /// <summary>
         /// If this ASI version is marked as not being production ready - users of the library will need to filter this as appropriate
         /// </summary>
