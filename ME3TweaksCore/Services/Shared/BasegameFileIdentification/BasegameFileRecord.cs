@@ -38,6 +38,23 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
         public string game { get; set; }
         public int size { get; set; }
         public List<string> moddeschashes { get; set; } = new List<string>(4);
+
+        /// <summary>
+        /// Source split by newline
+        /// </summary>
+        public string[] sourceLines
+        {
+            get
+            {
+                if (source == null)
+                {
+                    return [];
+                }
+
+                return source.Split('\n');
+            }
+        }
+
         public BasegameFileRecord() { }
         public BasegameFileRecord(string relativePathToRoot, int size, MEGame game, string humanName, string md5)
         {
@@ -86,7 +103,7 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
         /// </summary>
         /// <param name="blockName"></param>
         /// <returns></returns>
-        public string GetWithoutBlock(string blockName)
+        public string GetWithoutBlock(string blockName, string source)
         {
             string parsingStr = source;
             int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
@@ -103,72 +120,88 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
                         // The lazy way: Just do a replacement with nothing.
                         return source.Replace(parsingStr.Substring(openIdx, closeIdx - openIdx + BLOCK_CLOSING.Length), @"");
                     }
+                    else
+                    {
+                        // Skip this part of the block and continue parsing
+                        parsingStr = parsingStr.Substring(closeIdx + BLOCK_CLOSING.Length);
+
+                        // Scan for next index.
+                        openIdx = parsingStr.IndexOf(BLOCK_OPENING);
+                        closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
+                    }
                 }
             }
 
             // There is edge case where you have ]][[ in the string. Is anyone going to do that? Please don't.
             // We did not find the data block.
-            return parsingStr;
+            return source;
         }
 
         /// <summary>
-        /// Gets a string for displaying in a UI - stripping out the block storage
+        /// Gets a string for displaying in a UI - stripping out the block storages
         /// </summary>
         /// <returns></returns>
-        public string GetSourceForUI()
+        public string GetSourceForUI(string sublinePrefix = @"  ")
         {
-            List<string> blockNames = new List<string>();
-            List<string> blockValues = new List<string>();
-
-            string parsingStr = source;
-            // Find start and end of first data block
-            int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
-            int closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
-            
-            // Read all blocks into blockNames and blockValues
-            while (openIdx >= 0 && closeIdx >= 0 && closeIdx > openIdx)
+            var lines = source.Split('\n');
+            var parsedLines = new List<string>();
+            foreach (var line in lines)
             {
-                var blockText = parsingStr.Substring(openIdx + BLOCK_OPENING.Length, closeIdx - (openIdx + BLOCK_OPENING.Length));
-                var blockEqIdx = blockText.IndexOf('=');
-                if (blockEqIdx > 0)
+                List<string> blockNames = new List<string>();
+                List<string> blockValues = new List<string>();
+
+                var parsingStr = line;
+                // Find start and end of first data block
+                int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
+                int closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
+
+                // Read all blocks into blockNames and blockValues
+                while (openIdx >= 0 && closeIdx >= 0 && closeIdx > openIdx)
                 {
-                    var pBlockName = blockText.Substring(0, blockEqIdx);
-                    blockNames.Add(pBlockName);
-                    var blockData = blockText[(blockEqIdx+1)..];
-                    blockValues.AddRange(blockData.Split(BLOCK_SEPARATOR));
+                    var blockText = parsingStr.Substring(openIdx + BLOCK_OPENING.Length, closeIdx - (openIdx + BLOCK_OPENING.Length));
+                    var blockEqIdx = blockText.IndexOf('=');
+                    if (blockEqIdx > 0)
+                    {
+                        var pBlockName = blockText.Substring(0, blockEqIdx);
+                        blockNames.Add(pBlockName);
+                        var blockData = blockText[(blockEqIdx + 1)..];
+                        blockValues.AddRange(blockData.Split(BLOCK_SEPARATOR));
+                    }
+
+                    // Continue
+                    parsingStr = parsingStr[(closeIdx + BLOCK_CLOSING.Length)..];
+                    openIdx = parsingStr.IndexOf(BLOCK_OPENING);
+                    closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
                 }
 
-                // Continue
-                parsingStr = parsingStr[(closeIdx + BLOCK_CLOSING.Length)..];
-                openIdx = parsingStr.IndexOf(BLOCK_OPENING);
-                closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
-            }
-            
-            // Reset parsing string back to original value as we have now extracted data
-            parsingStr = source;
+                // Reset parsing string back to original value as we have now extracted data
+                parsingStr = line;
 
-            // Remove all data blocks from the string. Non-block data will be all that remains
-            foreach (var block in blockNames)
-            {
-                parsingStr = GetWithoutBlock(block);
+                // Remove all data blocks from the string. Non-block data will be all that remains
+                foreach (var block in blockNames)
+                {
+                    parsingStr = GetWithoutBlock(block, parsingStr);
+                }
+
+                if (blockValues.Any())
+                {
+                    parsingStr += $"\n{sublinePrefix}"; // do not localize
+                    parsingStr += string.Join($"\n{sublinePrefix}", blockValues); // do not localize
+                }
+
+                parsedLines.Add(parsingStr.Trim());
             }
 
-            if (blockValues.Any())
-            {
-                parsingStr += "\n"; // do not localize
-                parsingStr += string.Join("\n", blockValues); // do not localize
-            }
-            
-            return parsingStr.Trim();
+            return string.Join('\n', parsedLines);
         }
 
         /// <summary>
         /// Retrieves a block by its name. Can return null.
         /// </summary>
         /// <param name="blockName">The name of the block to retrieve. Cannot be null or empty.</param>
-        internal string GetBlock(string blockName)
+        internal string GetBlock(string blockName, string blockString)
         {
-            string parsingStr = source;
+            string parsingStr = blockString;
             int openIdx = parsingStr.IndexOf(BLOCK_OPENING);
             int closeIdx = parsingStr.IndexOf(BLOCK_CLOSING);
             while (openIdx >= 0 && closeIdx >= 0 && closeIdx > openIdx)
@@ -181,11 +214,11 @@ namespace ME3TweaksCore.Services.Shared.BasegameFileIdentification
                     if (pBlockName.CaseInsensitiveEquals(blockName))
                     {
                         // Return the found block's content
-                        return blockText.Substring(blockText.IndexOf('=')+1);
+                        return blockText.Substring(blockText.IndexOf('=') + 1);
                     }
                 }
             }
-            
+
             // Block not found
             return null;
         }

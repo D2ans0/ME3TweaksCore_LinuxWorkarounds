@@ -4,6 +4,7 @@ using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable;
+using ME3TweaksCore.Objects;
 using ME3TweaksCore.Services;
 using ME3TweaksCore.Services.Shared.BasegameFileIdentification;
 using System;
@@ -33,7 +34,13 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 modifiedFiles.Add(file);
             }
 
-            var isVanilla = VanillaDatabaseService.ValidateTargetAgainstVanilla(package.DiagnosticTarget, failedCallback, false);
+            var pi = new ProgressInfo();
+            pi.OnUpdate = (progressInfo) =>
+            {
+                package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingBasegameFileModifications) + $@" {(int)progressInfo.Value}%");
+            };
+
+            var isVanilla = VanillaDatabaseService.ValidateTargetAgainstVanilla(package.DiagnosticTarget, failedCallback, false, pi: pi);
             if (isVanilla)
             {
                 diag.AddDiagLine(@"No modified basegame files were found.");
@@ -57,14 +64,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
                             if (info != null)
                             {
-                                var source = info.source;
-                                // Strip BGFIS Bio2DA block and parse it, then add the BGFIS block for Bio2DA merge
-                                var strippedSource = info.GetWithoutBlock(Bio2DAMerge.BIO2DA_BGFIS_DATA_BLOCK).Trim();
-                                var twoDAMerge = Bio2DAMerge.GetMergedFilenames(info);
-                                if (twoDAMerge.Count > 0)
-                                {
-                                    strippedSource += '\n' + string.Join('\n', twoDAMerge);
-                                }
+                                var strippedSource = info.GetSourceForUI(@"&nbsp;");
                                 cell += $@"<td>{strippedSource.Replace("\n", "<br>")}</td>";
                             }
                             else

@@ -268,9 +268,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
             var originalInfo = BasegameFileIdentificationService.GetBasegameFileSource(target, finalPackage.FilePath, originalHash);
             var newInfoString = @"";
 
+            // We need to handle this for multiple lines.
             if (originalInfo != null)
             {
-                newInfoString = originalInfo.GetWithoutBlock(BIO2DA_BGFIS_DATA_BLOCK);
+                newInfoString = originalInfo.GetWithoutBlock(BIO2DA_BGFIS_DATA_BLOCK, originalInfo.source);
             }
 
             if (recordedMerges != null && recordedMerges.Any())
@@ -442,11 +443,14 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable
         internal static List<string> GetMergedFilenames(BasegameFileRecord info)
         {
             List<string> merges = new List<string>(0);
-            var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK);
-
-            if (blockText != null)
+            foreach (var source in info.sourceLines)
             {
-                merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
+                var blockText = info.GetBlock(BIO2DA_BGFIS_DATA_BLOCK, source);
+
+                if (blockText != null)
+                {
+                    merges = blockText.Split(BasegameFileRecord.BLOCK_SEPARATOR).ToList();
+                }
             }
 
             return merges;
