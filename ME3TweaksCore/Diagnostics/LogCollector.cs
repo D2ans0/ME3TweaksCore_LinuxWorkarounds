@@ -362,6 +362,13 @@ namespace ME3TweaksCore.Diagnostics
             }
 
             package.FullLogText = logUploadText.ToString();
+
+            if (package.UseLocalLogViewer)
+            {
+                MLog.Information(@"Returning log package without uploading.");
+                return package;
+            }
+
             package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_compressingForUpload));
             var lzmalog = LZMA.CompressToLZMAFile(Encoding.UTF8.GetBytes(package.FullLogText));
             try

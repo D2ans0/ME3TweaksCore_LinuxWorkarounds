@@ -75,6 +75,11 @@ namespace ME3TweaksCore.Diagnostics.Support
         /// The full generated log text
         /// </summary>
         public string FullLogText { get; internal set; }
+
+        /// <summary>
+        /// If diag/log should be compiled but not uploaded
+        /// </summary>
+        public bool UseLocalLogViewer { get; set; }
     }
 
     /// <summary>
