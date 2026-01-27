@@ -3,6 +3,7 @@ using LegendaryExplorerCore.Unreal;
 using ME3TweaksCore.Diagnostics.Support;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.Objects;
 using ME3TweaksCore.Services;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,16 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     diag.AddDiagLine(@"If you restored from a backup without all localizations, there may be additional missing LOC entries listed here, that is normal.");
                 }
 
-                hadTocError |= CheckTOCFile(package, bgTOC, markerfile, diag.AddDiagLine, isTOCVanilla);
+                ProgressInfo pi = new ProgressInfo()
+                {
+                    OnUpdate = (ProgressInfo progressInfo) =>
+                    {
+                        package.UpdateStatusCallback?.Invoke(LC.GetString(LC.string_collectingTOCFileInformation) + $@" {(int)progressInfo.Value}%");
+                    },
+                    Value = 0
+                };
+
+                hadTocError |= CheckTOCFile(package, bgTOC, markerfile, diag.AddDiagLine, isTOCVanilla, pi);
 
                 var dlcs = package.DiagnosticTarget.GetInstalledDLC();
                 var dlcTOCs = new List<string>();
@@ -59,7 +69,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     {
                         diag.AddDiagLine($@"Unmodified vanilla TOC: {Path.GetRelativePath(package.DiagnosticTarget.TargetPath, toc)}", LogSeverity.GOOD);
                     }
-                    hadTocError |= CheckTOCFile(package, toc, markerfile, diag.AddDiagLine, isTOCVanilla);
+                    hadTocError |= CheckTOCFile(package, toc, markerfile, diag.AddDiagLine, isTOCVanilla, pi);
                 }
 
                 if (package.DiagnosticTarget.Game.IsOTGame())
@@ -85,7 +95,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
         /// <param name="textureMarkerFilePath"></param>
         /// <param name="addDiagLine">Function to print to diagnostic</param>
         /// <param name="isTocVanilla"></param>
-        private static bool CheckTOCFile(LogUploadPackage package, string tocFilePath, string textureMarkerFilePath, Action<string, LogSeverity> addDiagLine, bool isTocVanilla)
+        private static bool CheckTOCFile(LogUploadPackage package, string tocFilePath, string textureMarkerFilePath, Action<string, LogSeverity> addDiagLine, bool isTocVanilla, ProgressInfo pi = null)
         {
             bool hadTocError = false;
             var tocrootPath = package.DiagnosticTarget.TargetPath;
@@ -105,8 +115,15 @@ namespace ME3TweaksCore.Diagnostics.Modules
 
             int notPresentOnDiskCount = 0;
             bool isSubbed = false;
-            foreach (TOCBinFile.Entry ent in tbf.GetAllEntries())
+            pi?.Value = 0;
+            var entries = tbf.GetAllEntries();
+            var done = 0;
+            foreach (TOCBinFile.Entry ent in entries)
             {
+                done++;
+                pi?.Value = done * 100.0f / entries.Count;
+                pi?.OnUpdate(pi);
+
                 if (ent.name == @"PCConsoleTOC.txt")
                     continue; // This file is not shipped in most games, nor is it used, so we don't care.
 
