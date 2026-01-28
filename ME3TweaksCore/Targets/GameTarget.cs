@@ -1028,7 +1028,11 @@ namespace ME3TweaksCore.Targets
                         var matchingManifestASI = ASIManager.GetASIVersionByHash(hash, Game);
                         if (matchingManifestASI != null)
                         {
-                            installedASIs.Add(MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI));
+                            var knownAsiMod = MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI);
+                            if (knownAsiMod.VerifyDependencies(this))
+                            {
+                                installedASIs.Add(knownAsiMod);
+                            }
                         }
                         else
                         {

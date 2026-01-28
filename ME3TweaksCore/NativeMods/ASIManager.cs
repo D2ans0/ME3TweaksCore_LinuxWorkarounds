@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
@@ -26,7 +27,7 @@ namespace ME3TweaksCore.NativeMods
     [AddINotifyPropertyChangedInterface]
     public static class ASIManager
     {
-        public static readonly string CachedASIsFolder = Directory.CreateDirectory(Path.Combine(MCoreFilesystem.GetAppDataFolder(), @"CachedASIs")).FullName;
+        public static readonly string CachedASIsFolder = Directory.CreateDirectory(Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), @"CachedASIs")).FullName;
 
         public static readonly string ManifestLocation = Path.Combine(CachedASIsFolder, @"manifest.xml");
         public static readonly string StagedManifestLocation = Path.Combine(CachedASIsFolder, @"manifest_staged.xml");
@@ -381,11 +382,58 @@ namespace ME3TweaksCore.NativeMods
                                             IsBeta = TryConvert.ToBoolFromInt(version.Element(@"beta")?.Value),
                                             Hidden = TryConvert.ToBoolFromInt(version.Element(@"hidden")?.Value),
                                             DevModeOnly = TryConvert.ToBoolFromInt(version.Element(@"devsonly")?.Value),
+                                            Dependencies = version.Element(@"dependencies") != null ?
+                                                (from dep in version.Element(@"dependencies").Elements(@"dependency")
+                                                 select new ASIDependency
+                                                 {
+                                                     Filename = (string)dep.Element(@"filename"),
+                                                     StorageFilename = (string)dep.Element(@"storagefilename"),
+                                                     Filesize = TryConvert.ToInt32(dep.Element(@"size")?.Value, -1), // -1 will ensure validation always fails
+                                                     Hash = (string)dep.Element(@"hash")
+                                                 }).ToArray()
+                                                : new ASIDependency[] { },
                                             _otherGroupsToDeleteOnInstallInternal = version.Element(@"autoremovegroups")?.Value,
 
                                             Game = intToGame((int)ugroup.Attribute(@"game")), // use ugroup element to pull from outer group
                                         }).OrderBy(x => x.Version).ToList()
                                     }).ToList();
+
+#if DEBUG
+                updateGroups.Add(new ASIMod
+                {
+                    UpdateGroupId = 9999,
+                    Game = MEGame.LE2,
+                    Versions = new List<ASIModVersion>
+                    {
+                        new ASIModVersion
+                        {
+                            Name = "Dependency Test Mod",
+                            InstalledPrefix = "DependencyTest",
+                            Author = "ME3Tweaks",
+                            Version = 1,
+                            Description = "This is a test ASI mod used for testing purposes.",
+                            Hash = "c1bc233ee7bbbe2bf00acdaaa1457f2f", // Hash of empty file
+                            DownloadLink = "https://github.com/ME3Tweaks/LExASIs/releases/download/Dependencies/LE2DiscordIntegration.asi",
+                            IsBeta = false,
+                            Hidden = false,
+                            DevModeOnly = true,
+                            Game = MEGame.LE2,
+                            Dependencies = [
+                                new ASIDependency() {
+                                    Filename = "discord_partner_sdk.dll",
+                                    Filesize = 9602488,
+                                    Hash = "cd4513eec1296329f96834c69a5930d0",
+
+                                    StorageFilename = "discord_partner_sdk_v1.dll",
+                                    ServerAssetCompressed = true,
+                                    CompressedFilesize = 3144437,
+                                    CompressedHash = "b4916fc2aa84c5120577cf1fc897f766"
+                                }
+                            ]
+                        }
+                    }
+                });
+#endif
                 foreach (var v in updateGroups)
                 {
                     if (v.LatestVersionIncludingHidden == null)
@@ -460,7 +508,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="target"></param>
         /// <param name="forceSource">Null to let application choose the source, true to force online, false to force local cache. This parameter is used for testing</param>
         /// <returns></returns>
-        public static bool InstallASIToTarget(ASIModVersion asi, GameTarget target, bool? forceSource = null)
+        public static async Task<bool> InstallASIToTarget(ASIModVersion asi, GameTarget target, bool? forceSource = null)
         {
             if (asi.Game != target.Game) throw new Exception($@"ASI {asi.Name} cannot be installed to game {target.Game}");
             MLog.Information($@"Processing ASI installation request: {asi.Name} v{asi.Version} -> {target.TargetPath}");
@@ -534,6 +582,9 @@ namespace ME3TweaksCore.NativeMods
                     TelemetryInterposer.TrackEvent(@"Installed ASI", new Dictionary<string, string>() {
                                 { @"Filename", Path.GetFileNameWithoutExtension(finalPath)}
                             });
+
+                    await asi.InstallDependencies(target);
+
                     return true;
                 }
             }
@@ -616,6 +667,9 @@ namespace ME3TweaksCore.NativeMods
 
                     MLog.Information(@"Caching ASI to local ASI library: " + cachedPath);
                     downloadStream.WriteToFile(cachedPath);
+
+                    await asi.InstallDependencies(target);
+
                     return true;
                 }
                 catch (Exception e)
@@ -636,7 +690,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="version">The version to install. The default is 0, which means the latest</param>
         /// <param name="includeHiddenASIVersions">If hidden ASI mod versions should be included.</param>
         /// <returns></returns>
-        public static bool InstallASIToTarget(ASIMod mod, GameTarget target, int version = 0, bool includeHiddenASIVersions = false)
+        public static async Task<bool> InstallASIToTarget(ASIMod mod, GameTarget target, int version = 0, bool includeHiddenASIVersions = false)
         {
             ASIModVersion modV = null;
             if (version == 0)
@@ -651,7 +705,7 @@ namespace ME3TweaksCore.NativeMods
             if (modV == null)
                 return false; // Did not install
 
-            return InstallASIToTarget(modV, target);
+            return await InstallASIToTarget(modV, target);
         }
 
         /// <summary>
@@ -661,9 +715,9 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="nameForLogging"></param>
         /// <param name="gameTarget"></param>
         /// <param name="version">The versio nto install. The default is 0, which means the latest</param>
-        public static bool InstallASIToTargetByGroupID(ASIModUpdateGroupID updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
+        public static async Task<bool> InstallASIToTargetByGroupID(ASIModUpdateGroupID updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
         {
-            return InstallASIToTargetByGroupID((int)updateGroup, nameForLogging, gameTarget, version, includeHiddenASIs);
+            return await InstallASIToTargetByGroupID((int)updateGroup, nameForLogging, gameTarget, version, includeHiddenASIs);
         }
 
         /// <summary>
@@ -673,7 +727,7 @@ namespace ME3TweaksCore.NativeMods
         /// <param name="nameForLogging"></param>
         /// <param name="gameTarget"></param>
         /// <param name="version">The versio nto install. The default is 0, which means the latest</param>
-        public static bool InstallASIToTargetByGroupID(int updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
+        public static async Task<bool> InstallASIToTargetByGroupID(int updateGroup, string nameForLogging, GameTarget gameTarget, int version = 0, bool includeHiddenASIs = false)
         {
             var group = GetASIModsByGame(gameTarget.Game).FirstOrDefault(x => x.UpdateGroupId == updateGroup);
             if (group == null)
@@ -683,7 +737,7 @@ namespace ME3TweaksCore.NativeMods
                 return false;
             }
 
-            return InstallASIToTarget(group, gameTarget, version, includeHiddenASIs);
+            return await InstallASIToTarget(group, gameTarget, version, includeHiddenASIs);
         }
 
         /// <summary>
@@ -745,6 +799,31 @@ namespace ME3TweaksCore.NativeMods
             }
             return result;
 
+        }
+
+        /// <summary>
+        /// Shared method for verifying dependencies of a known ASI mod
+        /// </summary>
+        /// <param name="associatedManifestItem"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static bool VerifyDependenciesShared(ASIModVersion associatedManifestItem, GameTarget target)
+        {
+            if (associatedManifestItem != null && associatedManifestItem.Dependencies != null && associatedManifestItem.Dependencies.Length > 0)
+            {
+                foreach (var a in associatedManifestItem.Dependencies)
+                {
+                    if (!a.IsInstalled(target))
+                    {
+                        // Dependency is missing.
+                        MLog.Warning($@"ASI {associatedManifestItem.Name} v{associatedManifestItem.Version} is installed but is missing/has incorrect dependency {a.Filename}");
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

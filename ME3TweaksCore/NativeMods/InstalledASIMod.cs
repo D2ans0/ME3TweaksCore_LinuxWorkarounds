@@ -25,7 +25,6 @@ namespace ME3TweaksCore.NativeMods
             Hash = hash;
         }
 
-
         ///// <summary>
         ///// Deletes the backing file for this ASI
         ///// </summary>
