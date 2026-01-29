@@ -194,6 +194,12 @@
     <!-- 0={Dll Description String} -->
     <system:String x:Key="string_interp_companyX">Company: {0}</system:String>
     <!-- 0={Dll Company String} -->
+    <system:String x:Key="string_interp_versionX">Version: {0}</system:String>
+    <!-- 0={Version string} -->
+    <system:String x:Key="string_interp_failedToDownloadASIDependency">Failed to download ASI dependency {0}</system:String>
+    <!-- 0={Filename} -->
+    <system:String x:Key="string_interp_asiDependencyNotAvailable">ASI dependency {0} is not available</system:String>
+    <!-- 0={Filename} -->
 
     <!-- App Updater -->
     <system:String x:Key="string_upd_betaBuildNotificationString">This update is a beta build. You are receiving this update because you have opted into Beta Mode in the settings.</system:String>

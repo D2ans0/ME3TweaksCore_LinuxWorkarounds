@@ -139,6 +139,9 @@ namespace ME3TweaksCore.Localization
 		public const string string_interp_productNameX = "string_interp_productNameX";
 		public const string string_interp_descriptionX = "string_interp_descriptionX";
 		public const string string_interp_companyX = "string_interp_companyX";
+		public const string string_interp_versionX = "string_interp_versionX";
+		public const string string_interp_failedToDownloadASIDependency = "string_interp_failedToDownloadASIDependency";
+		public const string string_interp_asiDependencyNotAvailable = "string_interp_asiDependencyNotAvailable";
 		public const string string_upd_betaBuildNotificationString = "string_upd_betaBuildNotificationString";
 		public const string string_upd_1DayAgo = "string_upd_1DayAgo";
 		public const string string_upd_today = "string_upd_today";

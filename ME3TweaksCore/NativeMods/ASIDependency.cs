@@ -2,12 +2,11 @@
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
+using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using ME3TweaksCore.Targets;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ME3TweaksCore.NativeMods
@@ -59,7 +58,7 @@ namespace ME3TweaksCore.NativeMods
         /// <returns>The full path to the cached dependency file</returns>
         public string GetCachedPath()
         {
-            return Path.Combine(ASIManager.CachedASIsFolder, "dependencies", StorageFilename);
+            return Path.Combine(ASIManager.CachedASIsFolder, @"dependencies", StorageFilename);
         }
 
         /// <summary>
@@ -222,13 +221,13 @@ namespace ME3TweaksCore.NativeMods
 
                 if (!downloadSuccess)
                 {
-                    throw new Exception($"Failed to download ASI dependency {Filename}");
+                    throw new Exception(LC.GetString(LC.string_interp_failedToDownloadASIDependency, Filename));
                 }
 
                 // Verify it's now in cache
                 if (!IsInME3TweaksCache())
                 {
-                    throw new Exception($"ASI dependency {Filename} is not available");
+                    throw new Exception(LC.GetString(LC.string_interp_asiDependencyNotAvailable, Filename));
                 }
             }
 

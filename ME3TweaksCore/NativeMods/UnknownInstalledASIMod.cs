@@ -51,7 +51,7 @@ namespace ME3TweaksCore.NativeMods
 
             if (!string.IsNullOrWhiteSpace(info.ProductVersion))
             {
-                retInfo += '\n' + $"Version: {info.ProductVersion.Trim()}";
+                retInfo += '\n' + LC.GetString(LC.string_interp_versionX, info.ProductVersion.Trim());
             }
 
             return retInfo.Trim();

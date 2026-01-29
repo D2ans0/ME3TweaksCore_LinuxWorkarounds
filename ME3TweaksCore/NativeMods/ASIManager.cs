@@ -407,27 +407,27 @@ namespace ME3TweaksCore.NativeMods
                     {
                         new ASIModVersion
                         {
-                            Name = "Dependency Test Mod",
-                            InstalledPrefix = "DependencyTest",
-                            Author = "ME3Tweaks",
+                            Name = @"Dependency Test Mod",
+                            InstalledPrefix = @"DependencyTest",
+                            Author = @"ME3Tweaks",
                             Version = 1,
-                            Description = "This is a test ASI mod used for testing purposes.",
-                            Hash = "c1bc233ee7bbbe2bf00acdaaa1457f2f", // Hash of empty file
-                            DownloadLink = "https://github.com/ME3Tweaks/LExASIs/releases/download/Dependencies/LE2DiscordIntegration.asi",
+                            Description = @"This is a test ASI mod used for testing purposes.",
+                            Hash = @"c1bc233ee7bbbe2bf00acdaaa1457f2f", // Hash of empty file
+                            DownloadLink = @"https://github.com/ME3Tweaks/LExASIs/releases/download/Dependencies/LE2DiscordIntegration.asi",
                             IsBeta = false,
                             Hidden = false,
                             DevModeOnly = true,
                             Game = MEGame.LE2,
                             Dependencies = [
                                 new ASIDependency() {
-                                    Filename = "discord_partner_sdk.dll",
+                                    Filename = @"discord_partner_sdk.dll",
                                     Filesize = 9602488,
-                                    Hash = "cd4513eec1296329f96834c69a5930d0",
+                                    Hash = @"cd4513eec1296329f96834c69a5930d0",
 
-                                    StorageFilename = "discord_partner_sdk_v1.dll",
+                                    StorageFilename = @"discord_partner_sdk_v1.dll",
                                     ServerAssetCompressed = true,
                                     CompressedFilesize = 3144437,
-                                    CompressedHash = "b4916fc2aa84c5120577cf1fc897f766"
+                                    CompressedHash = @"b4916fc2aa84c5120577cf1fc897f766"
                                 }
                             ]
                         }
