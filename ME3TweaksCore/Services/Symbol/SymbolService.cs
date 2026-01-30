@@ -18,7 +18,7 @@ namespace ME3TweaksCore.Services.Symbol
         /// <summary>
         /// Database of game symbols indexed by game
         /// </summary>
-        private static Dictionary<MEGame, List<SymbolRecord>> Database;
+        private static Dictionary<MEGame, List<SymbolRecord>> Database = new Dictionary<MEGame, List<SymbolRecord>>();
 
         /// <summary>
         /// If the SymbolService has been initially loaded
@@ -30,12 +30,20 @@ namespace ME3TweaksCore.Services.Symbol
         /// </summary>
         private const string ServiceLoggingName = @"Symbol Service";
 
+        /// <summary>
+        /// Synchronization object for thread-safe operations
+        /// </summary>
+        private static object syncObj = new object();
+
         private static string GetLocalServiceCacheFile() => MCoreFilesystem.GetSymbolServiceFile();
 
         private static void InternalLoadService(JToken serviceData = null)
         {
-            Database = new Dictionary<MEGame, List<SymbolRecord>>();
-            LoadDatabase(Database, serviceData);
+            lock (syncObj)
+            {
+                Database = new Dictionary<MEGame, List<SymbolRecord>>();
+                LoadDatabase(Database, serviceData);
+            }
         }
 
         private static void LoadDatabase(Dictionary<MEGame, List<SymbolRecord>> database, JToken serviceData = null)
@@ -52,6 +60,12 @@ namespace ME3TweaksCore.Services.Symbol
                     bool updated = false;
                     // Read service data and merge into the local database file
                     var onlineDB = serviceData.ToObject<List<SymbolRecord>>();
+                    if (onlineDB == null)
+                    {
+                        MLog.Error($@"Failed to deserialize online {ServiceLoggingName}: data was null");
+                        return;
+                    }
+
                     foreach (var onlineRecord in onlineDB)
                     {
                         if (!database.TryGetValue(onlineRecord.Game, out var gameRecords))
@@ -60,16 +74,18 @@ namespace ME3TweaksCore.Services.Symbol
                             database[onlineRecord.Game] = gameRecords;
                         }
 
-                        // Check if this record already exists (matching game and game hash)
+                        // Check if this record already exists (matching game and game hash - case insensitive)
                         var existingRecord = gameRecords.FirstOrDefault(r => 
-                            r.GameHash == onlineRecord.GameHash);
+                            string.Equals(r.GameHash, onlineRecord.GameHash, StringComparison.OrdinalIgnoreCase));
 
                         if (existingRecord != null)
                         {
-                            // Update if PDB hash changed
-                            if (existingRecord.PdbHash != onlineRecord.PdbHash)
+                            // Update if PDB hash changed (case insensitive comparison)
+                            if (!string.Equals(existingRecord.PdbHash, onlineRecord.PdbHash, StringComparison.OrdinalIgnoreCase))
                             {
-                                existingRecord.PdbHash = onlineRecord.PdbHash;
+                                // Remove old record and add updated one to maintain immutability
+                                gameRecords.Remove(existingRecord);
+                                gameRecords.Add(onlineRecord);
                                 updated = true;
                             }
                         }
@@ -108,12 +124,20 @@ namespace ME3TweaksCore.Services.Symbol
                 try
                 {
                     var db = JsonConvert.DeserializeObject<Dictionary<MEGame, List<SymbolRecord>>>(File.ReadAllText(file));
-                    database.Clear();
-                    foreach (var kvp in db)
+                    if (db != null)
                     {
-                        database[kvp.Key] = kvp.Value;
+                        database.Clear();
+                        foreach (var kvp in db)
+                        {
+                            database[kvp.Key] = kvp.Value;
+                        }
+                        MLog.Information($@"Loaded local {ServiceLoggingName}");
                     }
-                    MLog.Information($@"Loaded local {ServiceLoggingName}");
+                    else
+                    {
+                        MLog.Warning($@"Local {ServiceLoggingName} file deserialized to null");
+                        database.Clear();
+                    }
                 }
                 catch (Exception e)
                 {
@@ -154,12 +178,15 @@ namespace ME3TweaksCore.Services.Symbol
         /// <returns>List of symbol records for the game, or empty list if none found</returns>
         public static List<SymbolRecord> GetSymbolsForGame(MEGame game)
         {
-            if (!ServiceLoaded || Database == null)
-                return new List<SymbolRecord>();
+            lock (syncObj)
+            {
+                if (!ServiceLoaded || Database == null)
+                    return new List<SymbolRecord>();
 
-            return Database.TryGetValue(game, out var records) 
-                ? new List<SymbolRecord>(records) 
-                : new List<SymbolRecord>();
+                return Database.TryGetValue(game, out var records) 
+                    ? new List<SymbolRecord>(records) 
+                    : new List<SymbolRecord>();
+            }
         }
 
         /// <summary>
