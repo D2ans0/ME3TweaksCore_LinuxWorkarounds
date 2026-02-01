@@ -41,6 +41,9 @@
 	<system:String x:Key="string_interp_productNameX">Продукт: {0}</system:String>
 	<system:String x:Key="string_interp_descriptionX">Описание: {0}</system:String>
 	<system:String x:Key="string_interp_companyX">Компания: {0}</system:String>
+	<system:String x:Key="string_interp_versionX">Версия: {0}</system:String>
+	<system:String x:Key="string_interp_failedToDownloadASIDependency">Не удалось скачать зависимый объект ASI {0}</system:String>
+	<system:String x:Key="string_interp_asiDependencyNotAvailable">Зависимый объект ASI {0} недоступен</system:String>
 	<system:String x:Key="string_validatingBackupSource">Валидация источника архива</system:String>
 	<system:String x:Key="string_waitingForUserInput">Ожидание пользовательского ввода</system:String>
 	<system:String x:Key="string_directoryIsNotEmptyMustBeEmpty">Директория не пуста. Место сохранения архива должно быть пустым.</system:String>
