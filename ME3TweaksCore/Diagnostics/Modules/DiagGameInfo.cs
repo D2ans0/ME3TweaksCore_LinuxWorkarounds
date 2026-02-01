@@ -139,7 +139,25 @@ namespace ME3TweaksCore.Diagnostics.Modules
                     }
                     else
                     {
-                        diag.AddDiagLine(@"bink2w64 ASI loader is not installed. ASI mods will not load", LogSeverity.WARN);
+                        // Is it just a different version?
+                        var fvi = FileVersionInfo.GetVersionInfo(package.DiagnosticTarget.GetVanillaBinkPath());
+                        if (fvi.ProductVersion != null && fvi.ProductName != null)
+                        {
+                            if (fvi.ProductName.Contains(@"LEBinkProxy"))
+                            {
+                                diag.AddDiagLine($@"Bink bypass version installed doesn't match version used by this build of {MLibraryConsumer.GetHostingProcessname()}: {fvi.ProductVersion}", LogSeverity.WARN);
+                                diag.AddDiagLine($@"ASI mods will load, but may behave differently than expected");
+                            }
+                            else
+                            {
+                                // Bink and Smacker
+                                diag.AddDiagLine(@"bink2w64 ASI loader is not installed. ASI mods will not load", LogSeverity.WARN);
+                            }
+                        }
+                        else
+                        {
+                            diag.AddDiagLine(@"bink2w64 ASI loader is not installed. ASI mods will not load", LogSeverity.WARN);
+                        }
                     }
                 }
 
