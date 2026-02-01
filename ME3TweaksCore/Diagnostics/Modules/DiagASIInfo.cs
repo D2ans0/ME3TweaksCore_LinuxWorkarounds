@@ -114,7 +114,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 {
 
                     var asiRows = new List<string>();
-                    
+
                     // Get all instaleld ASIs.
                     var installedASIs = package.DiagnosticTarget.GetInstalledASIs();
 
@@ -289,14 +289,24 @@ namespace ME3TweaksCore.Diagnostics.Modules
                                 lastIndexRead = i;
                             }
 
-                            // Read last 30 lines.
-                            if (lastIndexRead < fileContentsLines.Length - 1)
+                            // 02/01/2026
+                            // If it's 30 lines we don't insert a ... cause there's nothing else to add to the list.
+                            // If exactly 31 lines we don't insert a ... cause its not useful to add a ... that just lets it show
+                            // the next line as it would.
+                            if (fileContentsLines.Length > 30)
                             {
-                                sb.AppendLine(@"...");
-                                var startIndex = Math.Max(lastIndexRead, fileContentsLines.Length - 30);
-                                for (int i = startIndex; i < fileContentsLines.Length - 1; i++)
+                                // Read last 30 lines.
+                                if (lastIndexRead < fileContentsLines.Length - 1)
                                 {
-                                    sb.AppendLine(fileContentsLines[i]);
+                                    if (fileContentsLines.Length > 31)
+                                    {
+                                        sb.AppendLine(@"...");
+                                    }
+                                    var startIndex = Math.Max(lastIndexRead, fileContentsLines.Length - 30);
+                                    for (int i = startIndex; i < fileContentsLines.Length - 1; i++)
+                                    {
+                                        sb.AppendLine(fileContentsLines[i]);
+                                    }
                                 }
                             }
 
