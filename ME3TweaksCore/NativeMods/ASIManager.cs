@@ -389,7 +389,11 @@ namespace ME3TweaksCore.NativeMods
                                                      Filename = (string)dep.Element(@"filename"),
                                                      StorageFilename = (string)dep.Element(@"storagefilename"),
                                                      Filesize = TryConvert.ToInt32(dep.Element(@"size")?.Value, -1), // -1 will ensure validation always fails
-                                                     Hash = (string)dep.Element(@"hash")
+                                                     Hash = (string)dep.Element(@"hash"),
+                                                     
+                                                     ServerAssetCompressed = TryConvert.ToBoolFromInt(dep.Element(@"serverassetcompressed")?.Value), // If data is .lzma on server
+                                                     CompressedFilesize = TryConvert.ToInt32(dep.Element(@"compressedsize")?.Value, -1), // -1 will ensure validation always fails
+                                                     CompressedHash = (string)dep.Element(@"compressedhash"), // will be null if ServerAssetCompressed is false
                                                  }).ToArray()
                                                 : new ASIDependency[] { },
                                             _otherGroupsToDeleteOnInstallInternal = version.Element(@"autoremovegroups")?.Value,
