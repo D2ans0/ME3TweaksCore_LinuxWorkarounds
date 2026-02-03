@@ -12,6 +12,7 @@ using LegendaryExplorerCore.Unreal.ObjectInfo;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Objects;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -326,6 +327,7 @@ namespace ME3TweaksCore.TextureOverride
         /// <param name="outFolder">Directory to output files to</param>
         public void ReconstituteSource(Stream btpStream, string inMetadataFile, string outFolder, ProgressInfo pi = null)
         {
+
             MLog.Information($@"BTP RECONSTITUTION: Rebuild package files from BTP with metadata file {inMetadataFile}");
 
             var crc = Crc32.HashToUInt32(File.ReadAllBytes(inMetadataFile));
@@ -335,13 +337,41 @@ namespace ME3TweaksCore.TextureOverride
                 throw new Exception(LC.GetString(LC.string_interp_mismatchedBTMBTP, inMetadataFile));
             }
 
+            var reconstName = @"TexturePackage";
+
             // CRC matches
             using var metadataPackage = MEPackageHandler.UnsafeLazyLoad(inMetadataFile);
+            if (metadataPackage.NameCount > 0 && metadataPackage.Names[0].StartsWith(@"DLC_MOD_"))
+            {
+                // We assigned DLC name as the first item in the metadata package.
+                reconstName = metadataPackage.Names[0];
+                MLog.Information($@"BTP RECONSTITUTION: Metadata file indicates DLC name was {reconstName}");
+            }
+
+            // M3TO that we are also reconstituting
+            var m3to = new TextureOverrideManifest()
+            {
+                Textures = [],
+                Game = metadataPackage.Game
+            };
+
             var largeDataSerializer = new LargePackageChunkedSerializer()
             {
                 game = metadataPackage.Game,
-                basePackageName = $@"TO_TexturePackage",
-                baseSavePath = outFolder
+                basePackageName = $@"TO_{reconstName}",
+                baseSavePath = outFolder,
+                OnSave = (package) =>
+                {
+                    // On rollover, we need to add all textures in this package to the m3to
+                    foreach (var tex in package.Exports.Where(x => x.IsA(@"Texture2D")))
+                    {
+                        m3to.Textures.Add(new TextureOverrideTextureEntry()
+                        {
+                            CompilingSourcePackage = Path.GetFileName(package.FilePath),
+                            TextureIFP = tex.InstancedFullPath
+                        });
+                    }
+                }
             };
 
             var textures = metadataPackage.Exports.Where(x => x.IsA(@"Texture2D")).ToList();
@@ -362,6 +392,11 @@ namespace ME3TweaksCore.TextureOverride
                 foreach (var subCubeTexture in textureCubeLoadList)
                 {
                     metadataPackage.LoadExport(subCubeTexture, true);
+
+                    // Texture cube textures must be all reconstituted before the first port
+                    // as it will try to pull in the parent texture cube which will pull in the
+                    // face siblings
+                    ReconstituteTexture(btpStream, subCubeTexture);
                 }
 
                 // Now port the textures that are part of cubes.
@@ -370,7 +405,6 @@ namespace ME3TweaksCore.TextureOverride
                     done++;
                     pi.Value = done * 100.0 / textures.Count;
                     pi.OnUpdate(pi);
-
                     largeDataSerializer.ExportInto(subCubeTexture, cache);
                 }
 
@@ -400,6 +434,13 @@ namespace ME3TweaksCore.TextureOverride
             }
 
             largeDataSerializer.Finish();
+
+            // Re-save the m3to
+            var m3toPath = Path.Combine(outFolder, $@"{TextureOverrideManifest.PREFIX_TEXTURE_OVERRIDE_MANIFEST}{reconstName}{TextureOverrideManifest.EXTENSION_TEXTURE_OVERRIDE_MANIFEST}");
+            MLog.Information($@"BTP RECONSTITUTION: Writing m3to file to {m3toPath}");
+            File.WriteAllText(m3toPath, JsonConvert.SerializeObject(m3to, Formatting.Indented));
+
+
             MLog.Information($@"BTP RECONSTITUTION: Rebuild complete.");
         }
 
@@ -412,6 +453,13 @@ namespace ME3TweaksCore.TextureOverride
         {
             // Find the matching entry
             var matchingEntry = TextureOverrides.FirstOrDefault(x => x.OverridePath.CaseInsensitiveEquals(exp.InstancedFullPath)); // Should be IFP matching in the TO
+            if (matchingEntry == null)
+            {
+#if DEBUG
+                MLog.Warning($@"Not reconstituting sibling texture {exp.InstancedFullPath}: Not overridden by BTP");
+#endif
+                return;
+            }
 
             // Create T2D
             UTexture2D texture2D = exp.IsA(@"LightMapTexture2D") ? LightMapTexture2D.Create() : UTexture2D.Create();
