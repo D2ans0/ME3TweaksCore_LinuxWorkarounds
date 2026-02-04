@@ -87,7 +87,7 @@ namespace ME3TweaksCore.TextureOverride
 
             // Setup header (first pass)
             var fnvInput = $@"{tom.Game}{DLCName}";
-            BTP.Header.TargetHash = FNV1.Compute(Encoding.Unicode.GetBytes(fnvInput));
+            BTP.Header.TargetHash = FNV1.Compute(fnvInput);
             BTP.Header.Serialize(btpStream);
 
             // TEXTURE OVERRIDE SERIALIZATION =======================

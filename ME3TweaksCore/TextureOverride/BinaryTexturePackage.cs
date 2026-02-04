@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
+using System.Text;
 
 namespace ME3TweaksCore.TextureOverride
 {
@@ -91,7 +92,7 @@ namespace ME3TweaksCore.TextureOverride
     /// <summary>
     /// Class for serializing FNV1 hashes. Very basic.
     /// </summary>
-    class FNV1
+    public class FNV1
     {
         private const uint OFFSET = 0x811c9dc5;
         private const uint PRIME = 0x01000193;
@@ -111,6 +112,18 @@ namespace ME3TweaksCore.TextureOverride
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Computes a hash value for the specified string using Unicode encoding.
+        /// </summary>
+        /// <remarks>The input string is encoded using UTF-16 (Unicode) before computing the hash. The
+        /// result is deterministic for the same input string.</remarks>
+        /// <param name="str">The string to compute the hash value for. Cannot be null.</param>
+        /// <returns>A 32-bit unsigned integer representing the computed hash value of the input string.</returns>
+        public static uint Compute(string str)
+        {
+            return Compute(Encoding.Unicode.GetBytes(str));
         }
     }
 
