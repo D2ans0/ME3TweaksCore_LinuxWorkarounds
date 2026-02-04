@@ -91,6 +91,7 @@ namespace ME3TweaksCore.TextureOverride
             MLog.Information($@"Compiling Texture Override binary package to {btpDest} with {Textures.Count} textures");
 
             var metadataPackage = MEPackageHandler.CreateAndOpenPackage(M3CTextureOverrideMerge.GetBTPMetadataPath(target, dlcName), Game);
+            metadataPackage.FindNameOrAdd(dlcName); // DLC name is first in name table.
             using var btpStream = new FileStream(btpDest, FileMode.Create);
             var compiler = new TextureOverrideCompiler();
             var sourceFolder = Path.Combine(target.GetDLCPath(), dlcName, target.Game.CookedDirName());
