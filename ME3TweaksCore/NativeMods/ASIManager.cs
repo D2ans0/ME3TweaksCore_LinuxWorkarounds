@@ -647,6 +647,9 @@ namespace ME3TweaksCore.NativeMods
                         {
                             //ERROR!
                             MLog.Error(@"Downloaded ASI did not match the manifest! It has the wrong hash.");
+#if DEBUG
+                            MLog.Warning($@"Downloaded hash: {md5} Manifest hash: {asi.Hash}");
+#endif
                             return false;
                         }
 
