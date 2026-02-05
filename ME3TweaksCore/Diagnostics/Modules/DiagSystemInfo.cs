@@ -56,23 +56,18 @@ namespace ME3TweaksCore.Diagnostics.Modules
             diag.AddDiagLine(@"System Memory", LogSeverity.BOLD);
             long ramInBytes = (long)computerInfo.TotalPhysicalMemory; // Should work on Linux.
             diag.AddDiagLine($@"Total memory available: {FileSize.FormatSize(ramInBytes)}");
-            var memSpeed = computerInfo.MemorySpeed;
-            if (memSpeed > 0)
+            if (!WineWorkarounds.WineDetected)
             {
-                diag.AddDiagLine($@"Memory speed: {memSpeed}Mhz");
-            }
-            else
-            {
-                if (!WineWorkarounds.WineDetected)
+                var memSpeed = computerInfo.MemorySpeed;
+                if (memSpeed > 0)
                 {
-                    diag.AddDiagLine($@"Could not get memory speed", LogSeverity.WARN);
+                    diag.AddDiagLine($@"Memory speed: {memSpeed}Mhz");
                 }
                 else
                 {
-                    // MemorySpeed would need to be looked up on other platforms somehow
+                    diag.AddDiagLine($@"Could not get memory speed", LogSeverity.WARN);
                 }
             }
-
 
             diag.AddDiagLine(@"Processors", LogSeverity.BOLD);
             MLog.Information(@"Collecting processor information");

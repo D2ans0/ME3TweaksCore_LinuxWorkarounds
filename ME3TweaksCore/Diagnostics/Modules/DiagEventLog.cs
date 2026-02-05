@@ -1,6 +1,7 @@
 ﻿using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Gammtek.Extensions;
 using ME3TweaksCore.Diagnostics.Support;
+using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Misc;
 using System;
@@ -18,6 +19,11 @@ namespace ME3TweaksCore.Diagnostics.Modules
     {
         internal override void RunModule(LogUploadPackage package)
         {
+            if (WineWorkarounds.WineDetected)
+            {
+                return; // Do nothing on Linux for this
+            }
+
             var diag = package.DiagnosticWriter;
 
             //EVENT LOGS
