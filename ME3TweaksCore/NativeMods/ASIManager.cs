@@ -159,7 +159,6 @@ namespace ME3TweaksCore.NativeMods
             var resource = MUtilities.ExtractInternalFileToStream(@"ME3TweaksCore.NativeMods.CachedASI.asimanifest.xml");
             var embeddedManifest = new StreamReader(resource).ReadToEnd();
             ParseManifest(embeddedManifest, false);
-
         }
 
         private static void logManifestInfo()
@@ -174,6 +173,7 @@ namespace ME3TweaksCore.NativeMods
             for (int i = 0; i < masterGroups.Length; i++)
             {
                 MLog.Information($@"{GameNumConversion.FromGameNum(i + 1).ToGameName(true)} has ASI groups {string.Join(',', masterGroups[i].Select(x => x.UpdateGroupId))} available");
+#if DEBUG
                 foreach (var asiversions in masterGroups[i])
                 {
                     MLog.Debug($@"ASI Update Group {asiversions.UpdateGroupId} IsHidden: {asiversions.IsHidden} ---------------");
@@ -182,7 +182,7 @@ namespace ME3TweaksCore.NativeMods
                         MLog.Debug($@"   {asi.Name} v{asi.Version} IsBetaOnly: {asi.IsBeta}");
                     }
                 }
-
+#endif
             }
         }
 
