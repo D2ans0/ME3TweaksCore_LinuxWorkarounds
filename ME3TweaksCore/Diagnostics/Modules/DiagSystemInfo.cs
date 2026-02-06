@@ -33,6 +33,11 @@ namespace ME3TweaksCore.Diagnostics.Modules
             //Windows 10 only
             string verLine = computerInfo.OSFullName;
 
+            if (WineWorkarounds.WineDetected)
+            {
+                osBuildVersion = new Version(computerInfo.OSVersion);
+            }
+
             // Todo: Implement OS via new M3SupportedOS
             if (os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS)
             {
