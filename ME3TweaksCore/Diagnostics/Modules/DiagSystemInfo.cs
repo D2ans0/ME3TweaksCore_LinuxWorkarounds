@@ -33,10 +33,6 @@ namespace ME3TweaksCore.Diagnostics.Modules
             //Windows 10 only
             string verLine = computerInfo.OSFullName;
 
-            if (WineWorkarounds.WineDetected)
-            {
-                osBuildVersion = new Version(computerInfo.OSVersion);
-            }
 
             // Todo: Implement OS via new M3SupportedOS
             if (os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS)
@@ -52,8 +48,16 @@ namespace ME3TweaksCore.Diagnostics.Modules
             // End supported OS change req
 
             diag.AddDiagLine(verLine, os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS ? LogSeverity.ERROR : LogSeverity.INFO);
-            diag.AddDiagLine($@"Version " + osBuildVersion, os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS ? LogSeverity.ERROR : LogSeverity.INFO);
-            diag.AddDiagLine($@"System culture: {CultureInfo.InstalledUICulture.Name}");
+            if (!WineWorkarounds.WineDetected)
+            {
+                diag.AddDiagLine($@"Version " + osBuildVersion, os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS ? LogSeverity.ERROR : LogSeverity.INFO);
+            } else
+            {
+                diag.AddDiagLine(@"Host OS version: " + computerInfo.OSVersion);
+                diag.AddDiagLine($@"Windows Version reported by Wine: " + osBuildVersion, os.Version < ME3TweaksCoreLib.MIN_SUPPORTED_OS ? LogSeverity.ERROR : LogSeverity.INFO);
+
+            }
+                diag.AddDiagLine($@"System culture: {CultureInfo.InstalledUICulture.Name}");
 
             diag.AddDiagLine();
             MLog.Information(@"Collecting memory information");
