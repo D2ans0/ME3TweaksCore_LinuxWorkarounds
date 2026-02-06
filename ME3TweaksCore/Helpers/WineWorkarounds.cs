@@ -149,7 +149,7 @@ namespace ME3TweaksCore.Helpers
                 WineHostKernelVersion = HostKernelVersion;
 
                 // Needs changed to Mac if that can be determined (darwin?)
-                ComputerInfo.ForcePlatform(EOSPlatform.Linux);
+                ComputerInfo.ForcePlatform(EOSPlatform.Wine);
             }
         }
 
