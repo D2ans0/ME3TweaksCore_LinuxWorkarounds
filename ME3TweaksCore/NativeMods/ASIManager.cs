@@ -390,7 +390,7 @@ namespace ME3TweaksCore.NativeMods
                                                      StorageFilename = (string)dep.Element(@"storagefilename"),
                                                      Filesize = TryConvert.ToInt32(dep.Element(@"size")?.Value, -1), // -1 will ensure validation always fails
                                                      Hash = (string)dep.Element(@"hash"),
-                                                     
+
                                                      ServerAssetCompressed = TryConvert.ToBoolFromInt(dep.Element(@"serverassetcompressed")?.Value), // If data is .lzma on server
                                                      CompressedFilesize = TryConvert.ToInt32(dep.Element(@"compressedsize")?.Value, -1), // -1 will ensure validation always fails
                                                      CompressedHash = (string)dep.Element(@"compressedhash"), // will be null if ServerAssetCompressed is false
@@ -451,7 +451,7 @@ namespace ME3TweaksCore.NativeMods
                     {
                         v.IsHidden = true;
                     }
-                    
+
                     switch (v.Game)
                     {
                         case MEGame.ME1:
@@ -525,6 +525,20 @@ namespace ME3TweaksCore.NativeMods
                 Directory.CreateDirectory(destinationDirectory);
             }
             string finalPath = Path.Combine(destinationDirectory, destinationFilename);
+
+            // 02/07/2026 - Install VC++ 14.50 dlls if on linux
+            if (WineWorkarounds.WineDetected)
+            {
+                if (await ASIWine.EnsureVC145ZipDownloadedAsync())
+                {
+                    await ASIWine.ExtractVC145ToTargetAsync(target);
+                }
+                else
+                {
+                    // Required dlls are missing for ASIs that do logging.........
+                    MLog.Error($@"Required dlls for ASIs to work could not be downloaded. The file should be downloaded from {ASIWine.VC145_DOWNLOAD_URL} and placed at {ASIWine.GetVC145ZipPath()}");
+                }
+            }
 
             var installedASIs = target.GetInstalledASIs();
             // Delete existing ASIs from the same group to ensure we don't install the same mod
