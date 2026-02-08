@@ -1,14 +1,15 @@
 ﻿#pragma warning disable CA1416 // Validate platform compatibility
 
+using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Localization;
+using ME3TweaksCore.Objects;
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using ME3TweaksCore.Diagnostics;
-using ME3TweaksCore.Objects;
-using Microsoft.Win32;
 
 namespace ME3TweaksCore.NativeMods
 {
@@ -109,7 +110,7 @@ namespace ME3TweaksCore.NativeMods
                 }
 
                 // Create temp file path for installer
-                tempInstallerPath = Path.Combine(Path.GetTempPath(), $"vc_redist_x64_{Guid.NewGuid()}.exe");
+                tempInstallerPath = Path.Combine(Path.GetTempPath(), $@"vc_redist_x64_{Guid.NewGuid()}.exe");
 
                 // Download the installer
                 MLog.Information($@"Downloading MSVC++ redistributable from {MSVC_DOWNLOAD_URL}");
@@ -133,7 +134,7 @@ namespace ME3TweaksCore.NativeMods
                 MLog.Information(@"Installing MSVC++ redistributable (requires administrator privileges)");
                 progressInfo.Value = 0;
                 progressInfo.Indeterminate = true;
-                progressInfo.Status = "Installing Microsoft Visual C++ Redistributable";
+                progressInfo.Status = LC.GetString(LC.string_installingMicrosoftVisualCPPRedistributable);
                 progressInfo.OnUpdate?.Invoke(progressInfo);
                 var installSuccess = InstallVCRedist(tempInstallerPath);
 
@@ -195,7 +196,7 @@ namespace ME3TweaksCore.NativeMods
         {
             try
             {
-                progressInfo.Status = "Downloading Microsoft Visual C++ Redistributable";
+                progressInfo.Status = LC.GetString(LC.string_downloadingMicrosoftVisualCPPRedistributable);
                 using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
 
                 using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

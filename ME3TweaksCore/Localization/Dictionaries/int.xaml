@@ -488,5 +488,10 @@
     <!-- 0={Filepath} -->
     <system:String x:Key="string_interp_gsNotValidShader">Invalid m3gs file: {0}. File is not a valid compiled shader.</system:String>
     <!-- 0={Filepath} -->
+    
+    <!-- MSVCPPDetector -->
+    <system:String x:Key="string_installingMicrosoftVisualCPPRedistributable">Installing Microsoft Visual C++ Redistributable</system:String>
+    <system:String x:Key="string_downloadingMicrosoftVisualCPPRedistributable">Downloading Microsoft Visual C++ Redistributable</system:String>
+
 
 </ResourceDictionary>

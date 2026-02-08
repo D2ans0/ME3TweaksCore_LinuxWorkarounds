@@ -14,9 +14,9 @@ namespace ME3TweaksCore.NativeMods
 {
     internal static class ASIWine
     {
-        private const string VC145_ZIP_FILENAME = "vc145.zip";
-        private const string VC145_MD5_HASH = "b80dfe7a90dee0bb31af9f7f2173a6f3";
-        internal const string VC145_DOWNLOAD_URL = "https://github.com/ME3Tweaks/ME3TweaksAssets/releases/download/msvc-v145/vc145.zip";
+        private const string VC145_ZIP_FILENAME = @"vc145.zip";
+        private const string VC145_MD5_HASH = @"b80dfe7a90dee0bb31af9f7f2173a6f3";
+        internal const string VC145_DOWNLOAD_URL = @"https://github.com/ME3Tweaks/ME3TweaksAssets/releases/download/msvc-v145/vc145.zip";
 
         /// <summary>
         /// Tracks if the VC145 zip file has been hash-verified during this session
@@ -29,7 +29,7 @@ namespace ME3TweaksCore.NativeMods
         /// <returns>Full path to vc145.zip</returns>
         internal static string GetVC145ZipPath()
         {
-            var cachedASIsFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), "CachedASIs", "Linux");
+            var cachedASIsFolder = Path.Combine(MCoreFilesystem.GetSharedME3TweaksDataFolder(), @"CachedASIs", @"Linux");
             Directory.CreateDirectory(cachedASIsFolder);
             return Path.Combine(cachedASIsFolder, VC145_ZIP_FILENAME);
         }
