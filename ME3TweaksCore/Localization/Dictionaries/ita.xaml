@@ -256,6 +256,8 @@
 	<system:String x:Key="string_insanity">Folle</system:String>
 	<system:String x:Key="string_debugDifficulty">Difficoltá di debug</system:String>
 	<system:String x:Key="string_interp_unknownDifficultyLevelX">Livello di difficoltá sconosciuto: {0}</system:String>
+	<system:String x:Key="string_installingMicrosoftVisualCPPRedistributable">Installazione di Microsoft Visual C++ Redistributable in corso</system:String>
+	<system:String x:Key="string_downloadingMicrosoftVisualCPPRedistributable">Scaricamento di Microsoft Visual C++ Redistributable in corso</system:String>
 	<system:String x:Key="string_interp_onlineContentHashWrong">L'hash degli elementi scaricati ({0}) non coincide con l'hash previsto. Previsto: {1}, ottenuto: {2}</system:String>
 	<system:String x:Key="string_interp_plotManagerSyncForX">Sincronizzazione PlotManager per {0}</system:String>
 	<system:String x:Key="string_interp_errorCompilingFunctionReason" xml:space="preserve">Errore nella compilazione della funzione {0}: {1}</system:String>
