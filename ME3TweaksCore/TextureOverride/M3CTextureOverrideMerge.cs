@@ -79,6 +79,12 @@ namespace ME3TweaksCore.TextureOverride
             {
                 MLog.Information($@"Merging M3 Texture Override {m3to} in {dlcFolderName}");
                 var manifestText = File.ReadAllText(m3to);
+
+                if (string.IsNullOrEmpty(manifestText))
+                {
+                    MLog.Warning($@"Skipping empty manifest file {m3to}");
+                    continue;
+                }
                 var manifest = JsonConvert.DeserializeObject<TextureOverrideManifest>(manifestText);
 
                 try
