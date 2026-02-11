@@ -1,4 +1,14 @@
-﻿using System;
+﻿using LegendaryExplorerCore.GameFilesystem;
+using LegendaryExplorerCore.Gammtek.Collections.Generic;
+using LegendaryExplorerCore.Helpers;
+using LegendaryExplorerCore.Misc;
+using LegendaryExplorerCore.Packages;
+using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.Misc;
+using ME3TweaksCore.Objects;
+using Microsoft.Win32;
+using NickStrupat;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,15 +16,10 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Threading;
-using LegendaryExplorerCore.GameFilesystem;
-using LegendaryExplorerCore.Helpers;
-using LegendaryExplorerCore.Misc;
-using LegendaryExplorerCore.Packages;
-using ME3TweaksCore.Diagnostics;
-using NickStrupat;
 using ThreadState = System.Diagnostics.ThreadState;
 
 namespace ME3TweaksCore.Helpers
@@ -28,7 +33,7 @@ namespace ME3TweaksCore.Helpers
         //Step 1: https://stackoverflow.com/questions/2435894/net-how-do-i-check-for-illegal-characters-in-a-path
         private static string RemoveSpecialCharactersUsingCustomMethod(this string expression, bool removeSpecialLettersHavingASign = true, bool allowPeriod = false)
         {
-            var newCharacterWithSpace = " ";
+            var newCharacterWithSpace = @" ";
             var newCharacter = "";
 
             // Return carriage handling
@@ -143,13 +148,14 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="filename"></param>
         /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="progressDelegate">Delegate to invoke during progress. Will slow hashing a bit.</param>
         /// <returns></returns>
-        public static string CalculateHash(string filename, string algorithm = null)
+        public static string CalculateHash(string filename, string algorithm = null, Action<ProgressInfo> progressDelegate = null)
         {
             try
             {
                 using var stream = File.OpenRead(filename);
-                return CalculateHash(stream, algorithm);
+                return CalculateHash(stream, algorithm, progressDelegate: progressDelegate);
             }
             catch (IOException e)
             {
@@ -175,8 +181,10 @@ namespace ME3TweaksCore.Helpers
         /// </summary>
         /// <param name="stream">Stream to hash</param>
         /// <param name="algorithm">Algorithm to use. Use null for MD5.</param>
+        /// <param name="byteLenToHash">How many bytes to hash. If 0, hash everything in the stream</param>
+        /// <param name="percentComplete">Delegate that is invoked with progress. This uses chunked hashing and may be a bit slower.</param>
         /// <returns></returns>
-        public static string CalculateHash(Stream stream, string algorithm = null)
+        public static string CalculateHash(Stream stream, string algorithm = null, long byteLenToHash = 0, Action<ProgressInfo> progressDelegate = null)
         {
             HashAlgorithm algo = null;
 
@@ -197,7 +205,8 @@ namespace ME3TweaksCore.Helpers
                 }
 
                 stream.Position = 0;
-                var hash = algo.ComputeHash(stream);
+                Stream streamToHash = byteLenToHash > 0 ? new StreamReadLimitLengthWrapper(stream, byteLenToHash) : stream;
+                var hash = progressDelegate != null ? computeHashChunked(streamToHash, algo, progressDelegate) : algo.ComputeHash(streamToHash);
                 stream.Position = 0; // reset stream
                 return BitConverter.ToString(hash).Replace(@"-", "").ToLowerInvariant();
             }
@@ -213,8 +222,54 @@ namespace ME3TweaksCore.Helpers
             }
         }
 
+        /// <summary>
+        /// Comutes hash in 4KB chunks and reports progress
+        /// </summary>
+        /// <param name="inputStream"></param>
+        /// <param name="algo"></param>
+        /// <param name="progress"></param>
+        /// <returns></returns>
+        private static byte[] computeHashChunked(Stream inputStream, HashAlgorithm algo, Action<ProgressInfo> progressDelegate)
+        {
+            // Get the total size of the stream for calculating the percentage.
+            long totalBytes = inputStream.Length;
+            long processedBytes = 0;
+
+            byte[] buffer = new byte[4096]; // Read in chunks of 4KB.
+            int bytesRead;
+
+            ProgressInfo pi = new ProgressInfo();
+            pi.Indeterminate = false;
+            while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                // Feed the chunk into the hash algorithm.
+                algo.TransformBlock(buffer, 0, bytesRead, null, 0);
+
+                // Update the number of processed bytes and report progress.
+                processedBytes += bytesRead;
+                if (totalBytes > 0)
+                {
+                    pi.Value = (double)processedBytes / totalBytes * 100;
+                    progressDelegate(pi);
+                }
+            }
+
+            // Finalize the hash computation.
+            algo.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            pi.Value = 100;
+            progressDelegate(pi);
+
+            return algo.Hash;
+        }
+
         internal static List<string> GetListOfInstalledAV()
         {
+            if (WineWorkarounds.WineDetected)
+            {
+                // No AV on Wine
+                return new List<string>();
+            }
+
             List<string> av = new List<string>();
             // for Windows Vista and above '\root\SecurityCenter2'
             using (var searcher = new ManagementObjectSearcher(@"\\" +
@@ -232,14 +287,7 @@ namespace ME3TweaksCore.Helpers
             return av;
         }
 
-        public static bool IsWindows10OrNewer()
-        {
-            var os = Environment.OSVersion;
-            return os.Platform == PlatformID.Win32NT &&
-                   (os.Version.Major >= 10);
-        }
-
-        internal static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
+        public static Stream GetResourceStream(string assemblyResource, Assembly assembly = null)
         {
             assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
@@ -253,14 +301,15 @@ namespace ME3TweaksCore.Helpers
             return assembly.GetManifestResourceStream(assemblyResource);
         }
 
-        internal static MemoryStream ExtractInternalFileToStream(string internalResourceName)
+        public static MemoryStream ExtractInternalFileToStream(string internalResourceName, Assembly assembly = null)
         {
             MLog.Information($@"Extracting embedded file: {internalResourceName} to memory");
+            assembly ??= Assembly.GetExecutingAssembly();
 #if DEBUG
             // This is for inspecting the list of files in debugger
-            var resources = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+            var resources = assembly.GetManifestResourceNames();
 #endif
-            using (Stream stream = GetResourceStream(internalResourceName))
+            using (Stream stream = GetResourceStream(internalResourceName, assembly))
             {
 #if AZURE
                 if (stream == null)
@@ -887,6 +936,54 @@ namespace ME3TweaksCore.Helpers
             {
                 var key = Path.GetFileName(file);
                 loadedFiles[key] = file;
+            }
+        }
+
+        /// <summary>
+        /// Windows API function to retrieve disk space information.
+        /// </summary>
+        /// <param name="lpDirectoryName">A directory on the disk.</param>
+        /// <param name="lpFreeBytesAvailable">The total number of free bytes available to the user.</param>
+        /// <param name="lpTotalNumberOfBytes">The total number of bytes on the disk.</param>
+        /// <param name="lpTotalNumberOfFreeBytes">The total number of free bytes on the disk.</param>
+        /// <returns>True if the function succeeds, false otherwise.</returns>
+        [DllImport(@"kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetDiskFreeSpaceEx(string lpDirectoryName,
+            out ulong lpFreeBytesAvailable,
+            out ulong lpTotalNumberOfBytes,
+            out ulong lpTotalNumberOfFreeBytes);
+
+        /// <summary>
+        /// Gets the free space available on the drive containing the specified folder.
+        /// </summary>
+        /// <param name="folderName">The folder path on the drive to check.</param>
+        /// <param name="freespace">Output parameter that receives the number of free bytes.</param>
+        /// <returns>True if the operation succeeded, false otherwise.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when folderName is null or empty.</exception>
+        public static bool DriveFreeBytes(string folderName, out ulong freespace)
+        {
+            freespace = 0;
+            if (string.IsNullOrEmpty(folderName))
+            {
+                throw new ArgumentNullException(nameof(folderName));
+            }
+
+            if (!folderName.EndsWith("\\"))
+            {
+                folderName += '\\';
+            }
+
+            ulong free = 0, dummy1 = 0, dummy2 = 0;
+
+            if (GetDiskFreeSpaceEx(folderName, out free, out dummy1, out dummy2))
+            {
+                freespace = free;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }

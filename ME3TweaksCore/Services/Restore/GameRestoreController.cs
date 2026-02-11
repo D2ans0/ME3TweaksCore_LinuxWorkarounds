@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Timers;
 using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Gammtek.Extensions;
 using LegendaryExplorerCore.Helpers;
@@ -59,7 +60,7 @@ namespace ME3TweaksCore.Services.Restore
         /// </summary>
         public Action<bool> SetProgressIndeterminateCallback { get; set; }
         /// <summary>
-        /// Value indicating if a restore operation is currently in progress
+            /// Value indicating if a restore operation is currently in progress
         /// </summary>
         public bool RestoreInProgress { get; private set; }
 
@@ -78,6 +79,10 @@ namespace ME3TweaksCore.Services.Restore
         /// </summary>
         public Func<bool> ShouldLogEveryCopiedFile { get; set; } = ShouldLogEveryCopiedFileDefault;
 
+        /// <summary>
+        /// Timer that periodically calls SystemSleepManager to keep the system awake during restore
+        /// </summary>
+        private Timer _keepAwakeTimer = new Timer(30 * 1000); // 30s interval
 
         #region Delegate defaults
         /// <summary>
@@ -168,11 +173,9 @@ namespace ME3TweaksCore.Services.Restore
                             }
 
                             //TODO: PREVENT RESTORING TO DOCUMENTS/BIOWARE
-
                         }
 
                         TelemetryInterposer.TrackEvent(@"Chose to restore game to custom location", new Dictionary<string, string>() { { @"Game", Game.ToString() } });
-
                     }
                     else
                     {
@@ -191,7 +194,6 @@ namespace ME3TweaksCore.Services.Restore
                     //b.Result = RestoreResult.ERROR_COULD_NOT_CREATE_DIRECTORY;
                     return false;
                 }
-
 
                 RestoreUsingRoboCopy(backupPath, restoreTarget, backupStatus, destinationDirectory);
 
@@ -228,6 +230,7 @@ namespace ME3TweaksCore.Services.Restore
         }
         private void RestoreUsingRoboCopy(string backupPath, GameTarget destTarget, GameBackupStatus backupStatus, string destinationPathOverride = null)
         {
+            SetSleepPrevention(true);
             var useTextureOptimized = UseOptimizedTextureRestore();
             var logEachFileCopied = ShouldLogEveryCopiedFile();
             if (destTarget != null && useTextureOptimized && destTarget.TextureModded)
@@ -309,6 +312,7 @@ namespace ME3TweaksCore.Services.Restore
                 }
             }
 
+            // This doesn't work on Linux
             RoboCommand rc = new RoboCommand();
             rc.CopyOptions.Destination = destinationPathOverride ?? destTarget.TargetPath;
             rc.CopyOptions.Source = backupPath;
@@ -337,6 +341,7 @@ namespace ME3TweaksCore.Services.Restore
             };
             MLog.Information($@"Beginning robocopy restore: {backupPath} -> {rc.CopyOptions.Destination}");
             rc.Start().Wait();
+            SetSleepPrevention(false);
             MLog.Information(@"Robocopy restore has completed");
 
             // Restore gamersettings
@@ -347,6 +352,41 @@ namespace ME3TweaksCore.Services.Restore
                 File.WriteAllText(gamerSettingsF, gamerSettings);
                 MLog.Information(@"Restored gamersettings.ini");
             }
+        }
+
+        /// <summary>
+        /// Prevents the system from going to sleep during the restore operation
+        /// </summary>
+        /// <param name="keepAwake">True to prevent sleep, false to allow sleep</param>
+        private void SetSleepPrevention(bool keepAwake)
+        {
+            if (keepAwake)
+            {
+                if (_keepAwakeTimer != null)
+                {
+                    _keepAwakeTimer.Elapsed += keepSystemAwake;
+                    _keepAwakeTimer.Start();
+                }
+            }
+            else
+            {
+                if (_keepAwakeTimer != null)
+                {
+                    _keepAwakeTimer.Stop();
+                    _keepAwakeTimer.Elapsed -= keepSystemAwake;
+                    _keepAwakeTimer.Dispose();
+                    _keepAwakeTimer = null;
+                }
+                SystemSleepManager.AllowSleep();
+            }
+        }
+
+        /// <summary>
+        /// Timer callback that keeps the system awake during restore
+        /// </summary>
+        private void keepSystemAwake(object sender, ElapsedEventArgs e)
+        {
+            SystemSleepManager.PreventSleep(@"GameRestore");
         }
     }
 

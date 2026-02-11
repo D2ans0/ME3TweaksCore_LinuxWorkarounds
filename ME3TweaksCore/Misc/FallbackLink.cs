@@ -16,24 +16,23 @@ namespace ME3TweaksCore.Misc
         public string FallbackURL { get; init; }
 
         /// <summary>
+        /// If URL randomly switches between main and fallback for load balancing
+        /// </summary>
+        public bool LoadBalancing { get; init; }
+
+        /// <summary>
         /// Fetches in order all populated links.
         /// </summary>
         /// <returns></returns>
         public List<string> GetAllLinks()
         {
             var urls = new List<string>();
-            if (LoadBalancing && new Random().Next(2) == 0)
+            if (MainURL != null) urls.Add(MainURL);
+            if (FallbackURL != null) urls.Add(FallbackURL);
+            if (LoadBalancing)
             {
-                // Load balance - swap url order
-                if (FallbackURL != null) urls.Add(FallbackURL);
-                if (MainURL != null) urls.Add(MainURL);
+                urls = urls.Shuffle().ToList();
             }
-            else
-            {
-                if (MainURL != null) urls.Add(MainURL);
-                if (FallbackURL != null) urls.Add(FallbackURL);
-            }
-
             return urls;
         }
     }

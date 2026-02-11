@@ -17,6 +17,7 @@ using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Helpers.ME1;
 using ME3TweaksCore.Localization;
+using ME3TweaksCore.Objects;
 using ME3TweaksCore.Services.Backup;
 using ME3TweaksCore.Targets;
 using Serilog;
@@ -55,7 +56,7 @@ namespace ME3TweaksCore.Services
                             ME1VanillaDatabase.Clear();
                         }
                     }
-                    
+
                     if (ME1VanillaDatabase.Count > 0)
                         return ME1VanillaDatabase;
                     var me1stream = MUtilities.ExtractInternalFileToStream($@"{assetPrefix}{(isMe1PL ? @"pl" : @"")}.bin"); //do not localize
@@ -317,7 +318,7 @@ namespace ME3TweaksCore.Services
 
         public static bool IsFileVanilla(MEGame game, string fullpath, string relativepath, bool isME1Polish, bool md5check = false)
         {
-            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\"))
+            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
                 return true; // Don't consider these as modified, they differ per user
             var database = LoadDatabaseFor(game, isME1Polish);
             if (database.TryGetValue(relativepath, out var info))
@@ -327,7 +328,8 @@ namespace ME3TweaksCore.Services
                 //    Debug.WriteLine("Sizes accepted: " + c.size);
                 //}
                 FileInfo f = new FileInfo(fullpath);
-                bool hasSameSize = info.Any(x => x.size == f.Length);
+                var length = f.Length;
+                bool hasSameSize = info.Any(x => x.size == length);
                 if (!hasSameSize)
                 {
                     return false;
@@ -346,7 +348,7 @@ namespace ME3TweaksCore.Services
 
         public static bool IsFileVanilla(MEGame game, string relativepath, bool isME1Polish, int fileSize, string md5 = null)
         {
-            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\"))
+            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
                 return true; // Don't consider these as modified, they differ per user
             var database = LoadDatabaseFor(game, isME1Polish);
             if (database.TryGetValue(relativepath, out var info))
@@ -360,6 +362,33 @@ namespace ME3TweaksCore.Services
                 // Optional md5 check
                 if (md5 != null)
                 {
+                    return info.Any(x => x.md5 == md5);
+                }
+
+                // File is vanilla
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsFileVanilla(MEGame game, FileInfo finfo, string relativepath, bool isME1Polish, bool md5check = false, string md5 = null)
+        {
+            if (game.IsLEGame() && relativepath.StartsWith(@"BioGame\Config\", StringComparison.OrdinalIgnoreCase))
+                return true; // Don't consider these as modified, they differ per user
+            var database = LoadDatabaseFor(game, isME1Polish);
+            if (database.TryGetValue(relativepath, out var info))
+            {
+                // Size check
+                if (info.All(x => x.size != finfo.Length))
+                {
+                    return false;
+                }
+
+                // Optional md5 check
+                if (md5check)
+                {
+                    md5 ??= MUtilities.CalculateHash(finfo.FullName);
                     return info.Any(x => x.md5 == md5);
                 }
 
@@ -388,7 +417,7 @@ namespace ME3TweaksCore.Services
         /// <param name="failedValidationCallback"></param>
         /// <param name="strictCheck">If true, TOC files and bink files are included in the check.</param>
         /// <returns></returns>
-        public static bool ValidateTargetAgainstVanilla(GameTarget target, Action<string> failedValidationCallback, bool strictCheck, bool md5check = false)
+        public static bool ValidateTargetAgainstVanilla(GameTarget target, Action<string> failedValidationCallback, bool strictCheck, bool md5check = false, ProgressInfo pi = null)
         {
             bool isVanilla = true;
             CaseInsensitiveConcurrentDictionary<List<(int size, string md5)>> vanillaDB = null;
@@ -426,13 +455,20 @@ namespace ME3TweaksCore.Services
                     throw new Exception(@"Cannot vanilla check against game that is not ME1/ME2/ME3/LE1/LE2/LE3/LELauncher");
             }
 
-            if (Directory.Exists(target.TargetPath))
+            var di = new DirectoryInfo(target.TargetPath);
+            if (di.Exists)
             {
-                foreach (string file in Directory.EnumerateFiles(target.TargetPath, @"*", SearchOption.AllDirectories))
+                var files = di.GetFiles("*", SearchOption.AllDirectories);
+                pi?.Value = 0;
+                var done = 0;
+                foreach (var file in files)
                 {
+                    done++;
+                    pi?.Value = (done * 100.0f / files.Length);
+                    pi?.OnUpdate(pi);
                     if (!strictCheck)
                     {
-                        var fname = Path.GetFileName(file).ToLower();
+                        var fname = Path.GetFileName(file.Name).ToLower();
                         switch (fname)
                         {
                             case @"bink2w64.dll":
@@ -441,18 +477,16 @@ namespace ME3TweaksCore.Services
                         }
                     }
 
-                    var shortname = file.Substring(target.TargetPath.Length + 1);
+                    var shortname = file.FullName.Substring(target.TargetPath.Length + 1);
                     if (vanillaDB.TryGetValue(shortname, out var fileInfo))
                     {
-                        var localFileInfo = new FileInfo(file);
-                        var extension = Path.GetExtension(file);
-                        if (extension != @".sfar")
+                        if (file.Extension != @".sfar")
                         {
                             // Normal file
                             var isVanila = IsFileVanilla(target.Game, file, shortname, false, md5check);
                             if (!isVanila)
                             {
-                                failedValidationCallback?.Invoke(file);
+                                failedValidationCallback?.Invoke(file.FullName);
                                 isVanilla = false;
                             }
 
@@ -461,34 +495,34 @@ namespace ME3TweaksCore.Services
 
                         // SFAR
                         bool correctSize;
-                        if (localFileInfo.Length == 32)
+                        if (file.Length == 32)
                         {
                             correctSize = false; //We don't treat 32byte as "correct" for vanilla purposes.
                         }
                         else
                         {
-                            correctSize = fileInfo.Any(x => x.size == localFileInfo.Length);
+                            correctSize = fileInfo.Any(x => x.size == file.Length);
                         }
 
                         if (correctSize)
                         {
                             if (md5check)
                             {
-                                var md5 = MUtilities.CalculateHash(file);
+                                var md5 = MUtilities.CalculateHash(file.FullName);
                                 if (fileInfo.All(x => x.md5 != md5))
                                 {
-                                    failedValidationCallback?.Invoke(file);
+                                    failedValidationCallback?.Invoke(file.FullName);
                                     isVanilla = false;
                                     continue; // This SFAR failed to validate
                                 }
                             }
 
-                            if (!SFARObject.HasUnpackedFiles(file))
+                            if (!SFARObject.HasUnpackedFiles(file.FullName))
                                 continue; //Consistent
                         }
 
                         // File has wrong size.
-                        failedValidationCallback?.Invoke(file);
+                        failedValidationCallback?.Invoke(file.FullName);
                         isVanilla = false;
                     }
                 }

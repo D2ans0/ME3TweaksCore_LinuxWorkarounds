@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LegendaryExplorerCore.Coalesced;
 using LegendaryExplorerCore.Coalesced.Config;
-using LegendaryExplorerCore.DebugTools;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
@@ -23,14 +18,14 @@ namespace ME3TweaksCore.Config
             var cookedDir = Path.Combine(dlcFolderRoot, dlcFolderName, game.CookedDirName());
             if (!Directory.Exists(cookedDir))
             {
-                MLog.Error($@"Cannot DLC merge {dlcFolderName}, cooked directory doesn't exist: {cookedDir}");
+                MLog.Error($@"Cannot ConfigMerge DLC {dlcFolderName}, cooked directory doesn't exist: {cookedDir}");
                 return; // Cannot asset merge
             }
 
             var configBundle = ConfigAssetBundle.FromDLCFolder(game, cookedDir, dlcFolderName);
             if (configBundle == null)
             {
-                MLog.Error($@"Cannot DLC merge {dlcFolderName}, assets did not load");
+                MLog.Error($@"Cannot ConfigMerge DLC {dlcFolderName}, assets did not load");
                 return; // Cannot asset merge
             }
 

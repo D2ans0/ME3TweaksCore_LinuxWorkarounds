@@ -40,6 +40,11 @@ namespace ME3TweaksCore.Targets
         public MEGame Game { get; }
         public string TargetPath { get; }
         public bool RegistryActive { get; set; }
+
+        /// <summary>
+        /// If this game target detected cmm_vanilla and should not be loaded for that specific reason
+        /// </summary>
+        public bool IsBackup { get; private set; }
         public string GameSource { get; private set; }
         public string ExecutableHash { get; private set; }
 
@@ -455,14 +460,14 @@ namespace ME3TweaksCore.Targets
             if (TextureModded && Game.IsLEGame())
             {
                 // Non package files initially.
-                modifiedBasegameFiles = modifiedFiles.Where(x=>!x.RepresentsPackageFilePath()).Select(file => MExtendedClassGenerators.GenerateModifiedFileObject(
+                modifiedBasegameFiles = modifiedFiles.Where(x => !x.RepresentsPackageFilePath()).Select(file => MExtendedClassGenerators.GenerateModifiedFileObject(
                     file.Substring(TargetPath.Length + 1), this,
                     restoreBasegamefileConfirmationCallback,
                     notifyFileRestoringCallback,
                     notifyRestoredCallback)).ToList();
 
                 // Then look for only tracked package files
-                foreach (var trackedFile in BasegameFileIdentificationService.GetEntriesForGame(Game).Where(x=>x.Key.RepresentsPackageFilePath()))
+                foreach (var trackedFile in BasegameFileIdentificationService.GetEntriesForGame(Game).Where(x => x.Key.RepresentsPackageFilePath()))
                 {
                     var path = Path.Combine(TargetPath, trackedFile.Key);
                     var hash = MUtilities.CalculateHash(path);
@@ -518,7 +523,7 @@ namespace ME3TweaksCore.Targets
         /// <param name="notifyDeleted"></param>
         /// <param name="notifyToggled"></param>
         /// <param name="modNamePrefersTPMI"></param>
-        public virtual void PopulateDLCMods(bool includeDisabled, Func<InstalledDLCMod, bool> deleteConfirmationCallback = null, Action notifyDeleted = null, Action notifyToggled = null, bool modNamePrefersTPMI = false)
+        public virtual void PopulateDLCMods(bool includeDisabled, Func<InstalledDLCMod, bool> deleteConfirmationCallback = null, Action<InstalledDLCMod> notifyDeleted = null, Action<InstalledDLCMod> notifyToggled = null, bool modNamePrefersTPMI = false)
         {
             if (Game == MEGame.LELauncher) return; // LE Launcher doesn't have DLC mods
             var dlcDir = M3Directories.GetDLCPath(this);
@@ -701,7 +706,11 @@ namespace ME3TweaksCore.Targets
 
             if (!ignoreCmmVanilla)
             {
-                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla"))) return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                if (File.Exists(Path.Combine(TargetPath, @"cmm_vanilla")))
+                {
+                    IsBackup = true;
+                    return LC.GetString(LC.string_invalidTargetProtectedByCmmvanilla);
+                }
             }
 
             IsValid = true;
@@ -990,11 +999,11 @@ namespace ME3TweaksCore.Targets
         {
             if (Game is MEGame.ME2 or MEGame.ME3)
             {
-                Binkw32StatusText = IsBinkBypassInstalled() ? LC.GetString(LC.string_bypassInstalledASIAndDLCModsWillBeAbleToLoad) : LC.GetString(LC.string_bypassNotInstalledASIAndDLCModsWillBeUnableToLoad);
+                Binkw32StatusText = this.IsBinkBypassInstalled() ? LC.GetString(LC.string_bypassInstalledASIAndDLCModsWillBeAbleToLoad) : LC.GetString(LC.string_bypassNotInstalledASIAndDLCModsWillBeUnableToLoad);
             }
             else if (Game is MEGame.ME1 || Game.IsLEGame())
             {
-                Binkw32StatusText = IsBinkBypassInstalled() ? LC.GetString(LC.string_bypassInstalledASIModsWillBeAbleToLoad) : LC.GetString(LC.string_bypassNotInstalledASIModsWillBeUnableToLoad);
+                Binkw32StatusText = this.IsBinkBypassInstalled() ? LC.GetString(LC.string_bypassInstalledASIModsWillBeAbleToLoad) : LC.GetString(LC.string_bypassNotInstalledASIModsWillBeUnableToLoad);
             }
         }
 
@@ -1019,7 +1028,11 @@ namespace ME3TweaksCore.Targets
                         var matchingManifestASI = ASIManager.GetASIVersionByHash(hash, Game);
                         if (matchingManifestASI != null)
                         {
-                            installedASIs.Add(MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI));
+                            var knownAsiMod = MExtendedClassGenerators.GenerateKnownInstalledASIMod(asiFile, hash, Game, matchingManifestASI);
+                            if (knownAsiMod.VerifyDependencies(this))
+                            {
+                                installedASIs.Add(knownAsiMod);
+                            }
                         }
                         else
                         {
@@ -1055,7 +1068,7 @@ namespace ME3TweaksCore.Targets
         }
 
         /// <summary>
-        /// Gets a list of installed DLC, sorted by mount priority from lowest to highest. Does not include disabled DLC.
+        /// Gets a list of installed DLC folder names, sorted by mount priority from lowest to highest. Does not include disabled DLC.
         /// </summary>
         /// <param name="includeDisabled"></param>
         /// <returns></returns>
@@ -1084,162 +1097,30 @@ namespace ME3TweaksCore.Targets
         {
             installedDLC ??= GetInstalledDLC();
             var metamap = new CaseInsensitiveDictionary<MetaCMM>();
-            var dlcpath = M3Directories.GetDLCPath(this);
             foreach (var v in installedDLC)
             {
                 if (!includeOfficial && MEDirectories.OfficialDLC(Game).Contains(v)) continue; // This is not a mod
-                var meta = Path.Combine(dlcpath, v, @"_metacmm.txt");
-                MetaCMM mf = null;
-                if (File.Exists(meta))
-                {
-                    mf = new MetaCMM(meta);
-                }
-
+                MetaCMM mf = GetMetaCMMForDLC(v);
                 metamap[v] = mf;
             }
 
             return metamap;
         }
 
-        private const string ME1ASILoaderHash = @"30660f25ab7f7435b9f3e1a08422411a";
-        private const string ME2ASILoaderHash = @"a5318e756893f6232284202c1196da13";
-        private const string ME3ASILoaderHash = @"1acccbdae34e29ca7a50951999ed80d5";
-        private const string LEASILoaderHash = @"19d444d944d89b173a81339859ec3e93"; // bink 2.0.0.12 by ME3Tweaks 06/02/2024
-
         /// <summary>
-        /// Determines if the enhanced bink video library file is installed
+        /// Retrieves the metadata for the specified DLC if available.
         /// </summary>
-        /// <returns>True if the specific version is found; false otherwise</returns>
-        public bool IsEnhancedBinkInstalled()
+        /// <param name="dlcName">The name of the DLC for which to retrieve metadata. Cannot be null or empty.</param>
+        /// <returns>A MetaCMM object containing the metadata for the specified DLC if the metadata file exists; otherwise, null.</returns>
+        public MetaCMM GetMetaCMMForDLC(string dlcName)
         {
-            if (Game.IsOTGame()) return false; // Enhanced bink is only for LE.
-            try
+            var dlcpath = M3Directories.GetDLCPath(this);
+            var meta = Path.Combine(dlcpath, dlcName, @"_metacmm.txt");
+            if (File.Exists(meta))
             {
-                string binkPath = GetOriginalProxiedBinkPath();
-                if (!File.Exists(binkPath))
-                    return false;
-
-                var finfo = FileVersionInfo.GetVersionInfo(binkPath);
-                return Version.TryParse(finfo.FileVersion, out var binkVer) && binkVer >= new Version(@"2022.05");
-            }
-            catch (Exception e)
-            {
-                // File is in use by another process perhaps
-                MLog.Exception(e, @"Unable to determine if enhanced bink is installed:");
+                return new MetaCMM(meta);
             }
 
-            return false;
-        }
-
-        /// <summary>
-        /// Determines if the bink ASI loader/bypass is installed (both OT and LE)
-        /// </summary>
-        /// <returns></returns>
-        public bool IsBinkBypassInstalled()
-        {
-            try
-            {
-                string binkPath = GetVanillaBinkPath();
-                string expectedHash = null;
-                if (Game == MEGame.ME1) expectedHash = ME1ASILoaderHash;
-                else if (Game == MEGame.ME2) expectedHash = ME2ASILoaderHash;
-                else if (Game == MEGame.ME3) expectedHash = ME3ASILoaderHash;
-                else if (Game.IsLEGame()) expectedHash = LEASILoaderHash;
-
-                if (File.Exists(binkPath))
-                {
-                    return MUtilities.CalculateHash(binkPath) == expectedHash;
-                }
-            }
-            catch (Exception e)
-            {
-                // File is in use by another process perhaps
-                MLog.Exception(e, @"Unable to hash bink dll:");
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Installs the Bink ASI loader to this target.
-        /// </summary>
-        /// <returns></returns>
-        public bool InstallBinkBypass(bool throwError)
-        {
-            var destPath = GetVanillaBinkPath();
-            MLog.Information($@"Installing Bink bypass for {Game} to {destPath}");
-            try
-            {
-                var obinkPath = GetOriginalProxiedBinkPath();
-
-                if (Game.IsOTGame())
-                {
-                    MUtilities.ExtractInternalFile($@"ME3TweaksCore.GameFilesystem.Bink._32.{Game.ToString().ToLower()}.binkw32.dll", destPath, true);
-                    MUtilities.ExtractInternalFile($@"ME3TweaksCore.GameFilesystem.Bink._32.{Game.ToString().ToLower()}.binkw23.dll", obinkPath, true);
-                }
-                else if (Game.IsLEGame() || Game == MEGame.LELauncher)
-                {
-                    MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._64.bink2w64.dll", destPath, true); // Bypass proxy / ASI loader
-                    MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._64.bink2w64_enhanced.dll", obinkPath, true); // The original dll (enhanced version)
-                }
-                else
-                {
-                    MLog.Error($@"Unknown game for gametarget (InstallBinkBypass): {Game}");
-                    return false;
-                }
-
-                MLog.Information($@"Installed Bink bypass for {Game}");
-                return true;
-            }
-            catch (Exception e)
-            {
-                MLog.Exception(e, @"Error installing bink bypass:");
-                if (throwError)
-                    throw;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Uninstalls the Bink ASI loader from this target (does not do anything to Legendary Edition Launcher)
-        /// </summary>
-        public void UninstallBinkBypass()
-        {
-            var binkPath = GetVanillaBinkPath();
-            var obinkPath = GetOriginalProxiedBinkPath();
-            if (Game == MEGame.ME1)
-            {
-                File.Delete(obinkPath);
-                MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me1.binkw23.dll", binkPath, true);
-            }
-            else if (Game == MEGame.ME2)
-            {
-                File.Delete(obinkPath);
-                MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me2.binkw23.dll", binkPath, true);
-            }
-            else if (Game == MEGame.ME3)
-            {
-                File.Delete(obinkPath);
-                MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._32.me3.binkw23.dll", binkPath, true);
-            }
-            else if (Game.IsLEGame())
-            {
-                File.Delete(obinkPath);
-                MUtilities.ExtractInternalFile(@"ME3TweaksCore.GameFilesystem.Bink._64.bink2w64_original.dll", binkPath, true);
-            }
-        }
-
-        /// <summary>
-        /// Gets the path where the original, vanilla bink dll should be (the one that is proxied)
-        /// </summary>
-        /// <returns></returns>
-        private string GetVanillaBinkPath()
-        {
-            if (Game == MEGame.ME1 || Game == MEGame.ME2) return Path.Combine(TargetPath, @"Binaries", @"binkw32.dll");
-            if (Game == MEGame.ME3) return Path.Combine(TargetPath, @"Binaries", @"win32", @"binkw32.dll");
-            if (Game.IsLEGame()) return Path.Combine(TargetPath, @"Binaries", @"Win64", @"bink2w64.dll");
-            if (Game == MEGame.LELauncher) return Path.Combine(TargetPath, @"bink2w64.dll");
             return null;
         }
 
@@ -1254,19 +1135,6 @@ namespace ME3TweaksCore.Targets
                 MLog.Information($@"Deleting {BackupService.CMM_VANILLA_FILENAME} file: {cmmVanilla}");
                 File.Delete(cmmVanilla);
             }
-        }
-
-        /// <summary>
-        /// Gets the path to the proxied version of the bink dll
-        /// </summary>
-        /// <returns></returns>
-        private string GetOriginalProxiedBinkPath()
-        {
-            if (Game == MEGame.ME1 || Game == MEGame.ME2) return Path.Combine(TargetPath, @"Binaries", @"binkw23.dll");
-            if (Game == MEGame.ME3) return Path.Combine(TargetPath, @"Binaries", @"win32", @"binkw23.dll");
-            if (Game.IsLEGame()) return Path.Combine(TargetPath, @"Binaries", @"Win64", @"bink2w64_original.dll");
-            if (Game == MEGame.LELauncher) return Path.Combine(TargetPath, @"bink2w64_original.dll");
-            return null;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

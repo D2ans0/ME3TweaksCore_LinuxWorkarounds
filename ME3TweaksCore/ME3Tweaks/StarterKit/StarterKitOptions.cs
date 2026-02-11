@@ -2,6 +2,7 @@
 using System.Text;
 using LegendaryExplorerCore.GameFilesystem;
 using LegendaryExplorerCore.Packages;
+using ME3TweaksCore.Targets;
 
 namespace ME3TweaksCore.ME3Tweaks.StarterKit
 {
@@ -63,6 +64,12 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
         public bool AddEDISQM { get; set; }
         public bool AddKaidanSQM { get; set; }
         public bool AddJavikSQM { get; set; }
+
+        /// <summary>
+        /// Game target for the game this is being generated for
+        /// </summary>
+        public GameTarget Target { get; set; }
+
         #endregion
 
 

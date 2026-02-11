@@ -8,6 +8,7 @@ using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.ME3Tweaks.M3Merge.Game2Email;
+using ME3TweaksCore.ME3Tweaks.M3Merge.GlobalShader;
 using ME3TweaksCore.ME3Tweaks.M3Merge.LE1Config;
 using ME3TweaksCore.ME3Tweaks.M3Merge.PlotManager;
 using ME3TweaksCore.ME3Tweaks.StarterKit;
@@ -129,6 +130,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             var sko = new StarterKitOptions()
             {
                 ModGame = Target.Game,
+                Target = Target,
                 GenerateModdesc = false,
                 OutputFolderOverride = M3Directories.GetDLCPath(Target),
                 ModDescription = null,
@@ -208,6 +210,7 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
             configBundle.CommitDLCAssets();
         }
 
+        // Is this run on other projects besides M3?
         /// <summary>
         /// Runs a full merge (via MergeDLC) on the specific target.
         /// </summary>
@@ -241,6 +244,10 @@ namespace ME3TweaksCore.ME3Tweaks.M3Merge
                 SQMOutfitMerge.RunSquadmateOutfitMerge(mergeDLC, setStatus);
             }
 
+            if (target.Game.IsLEGame() && GlobalShaderMerge.NeedsMerged(target))
+            {
+
+            }
         }
     }
 }

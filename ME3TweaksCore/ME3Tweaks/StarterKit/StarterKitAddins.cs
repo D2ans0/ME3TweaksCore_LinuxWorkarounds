@@ -17,13 +17,16 @@ using LegendaryExplorerCore.Unreal.ObjectInfo;
 using LegendaryExplorerCore.UnrealScript;
 using LegendaryExplorerCore.UnrealScript.Compiling.Errors;
 using ME3TweaksCore.Diagnostics;
+using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.ME3Tweaks.M3Merge;
 using ME3TweaksCore.ME3Tweaks.M3Merge.Bio2DATable;
 using ME3TweaksCore.ME3Tweaks.ModManager.Interfaces;
+using ME3TweaksCore.Misc;
 using ME3TweaksCore.Objects;
 using ME3TweaksCore.Services.Backup;
+using ME3TweaksCore.Targets;
 using Newtonsoft.Json;
 using static LegendaryExplorerCore.Unreal.CNDFile;
 
@@ -544,40 +547,40 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
         #endregion
 
         #region Plot Manager 
-        public static void GeneratePlotData(MEGame game, string dlcFolderPath)
+        public static void GeneratePlotData(GameTarget target, string dlcFolderPath)
         {
             // Startup file
             var dlcName = Path.GetFileName(dlcFolderPath);
-            var cookedPath = Path.Combine(dlcFolderPath, game.CookedDirName());
+            var cookedPath = Path.Combine(dlcFolderPath, target.Game.CookedDirName());
 
             #region GAME 1
-            if (game.IsGame1())
+            if (target.Game.IsGame1())
             {
                 // Plot Manager
                 var plotManName = $@"PlotManager{dlcName}";
-                var plotManF = Path.Combine(dlcFolderPath, game.CookedDirName(), $@"{plotManName}{game.PCPackageFileExtension()}");
+                var plotManF = Path.Combine(dlcFolderPath, target.Game.CookedDirName(), $@"{plotManName}{target.Game.PCPackageFileExtension()}");
                 if (File.Exists(plotManF))
                 {
                     MLog.Warning($@"PlotManager file {plotManF} already exists - not generating file or updating autoload");
                 }
                 else
                 {
-                    MEPackageHandler.CreateAndSavePackage(plotManF, game);
+                    MEPackageHandler.CreateAndSavePackage(plotManF, target.Game);
                     // PlotManager needs added since it forces it into memory (in vanilla) for long enough to be referenced
                     AddAutoloadReferenceGame1(dlcFolderPath, @"Packages", @"GlobalPackage", plotManName);
-                    AddAutoloadReferenceGame1(dlcFolderPath, @"Packages", @"PlotManagerConditionals", $@"{AddConditionalsClass(plotManF, dlcName)}.BioAutoConditionals");
+                    AddAutoloadReferenceGame1(dlcFolderPath, @"Packages", @"PlotManagerConditionals", $@"{AddConditionalsClass(target, plotManF, dlcName)}.BioAutoConditionals");
                 }
 
                 // Plot Manager Auto
                 var plotManAutoName = $@"PlotManagerAuto{dlcName}";
-                var plotManAutoF = Path.Combine(dlcFolderPath, game.CookedDirName(), $@"{plotManAutoName}{game.PCPackageFileExtension()}");
+                var plotManAutoF = Path.Combine(dlcFolderPath, target.Game.CookedDirName(), $@"{plotManAutoName}{target.Game.PCPackageFileExtension()}");
                 if (File.Exists(plotManAutoF))
                 {
                     MLog.Warning($@"PlotManager file {plotManF} already exists - not generating file or updating autoload");
                 }
                 else
                 {
-                    MEPackageHandler.CreateAndSavePackage(plotManAutoF, game);
+                    MEPackageHandler.CreateAndSavePackage(plotManAutoF, target.Game);
                     AddPlotManagerAuto(plotManAutoF, dlcName);
                     AddAutoloadReferenceGame1(dlcFolderPath, @"Packages", @"PlotManagerStateTransitionMap", $@"{plotManAutoName}.StateTransitionMap");
                     AddAutoloadReferenceGame1(dlcFolderPath, @"Packages", @"PlotManagerConsequenceMap", $@"{plotManAutoName}.ConsequenceMap");
@@ -589,46 +592,46 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             #endregion
 
             #region GAME 2 and GAME 3
-            if (game.IsGame2() || game.IsGame3())
+            if (target.Game.IsGame2() || target.Game.IsGame3())
             {
-                var startupFName = GetStartupFilename(game, dlcName);
+                var startupFName = GetStartupFilename(target.Game, dlcName);
                 var startupPackagePath = Path.Combine(cookedPath, startupFName);
                 if (!File.Exists(startupPackagePath))
                 {
                     // Generate startup file (it's required)
-                    AddStartupFile(game, dlcFolderPath);
+                    AddStartupFile(target.Game, dlcFolderPath);
                 }
 
-                if (game.IsGame2())
+                if (target.Game.IsGame2())
                 {
                     // We need to add the conditionals
-                    var plotManagerPackageName = AddConditionalsClass(startupPackagePath, dlcName);
-                    AddCoalescedReference(game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", plotManagerPackageName, CoalesceParseAction.AddUnique);
+                    var plotManagerPackageName = AddConditionalsClass(target, startupPackagePath, dlcName);
+                    AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", plotManagerPackageName, CoalesceParseAction.AddUnique);
 
-                    var bio2daPackageName = AddBio2DAGame2(game, dlcName, startupPackagePath);
-                    AddCoalescedReference(game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", bio2daPackageName, CoalesceParseAction.AddUnique);
+                    var bio2daPackageName = AddBio2DAGame2(target.Game, dlcName, startupPackagePath);
+                    AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", bio2daPackageName, CoalesceParseAction.AddUnique);
 
 
                     // Must also add to biogame
-                    AddCoalescedReference(game, dlcName, cookedPath, @"BioGame", @"SFXGame.BioWorldInfo", @"ConditionalClasses", $@"{plotManagerPackageName}.BioAutoConditionals", CoalesceParseAction.AddUnique);
+                    AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioGame", @"SFXGame.BioWorldInfo", @"ConditionalClasses", $@"{plotManagerPackageName}.BioAutoConditionals", CoalesceParseAction.AddUnique);
                 }
 
                 // Generate the maps
                 var plotAutoPackageName = AddPlotManagerAuto(startupPackagePath, dlcName);
 
                 // Add to Coalesced
-                AddCoalescedReference(game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", plotAutoPackageName, CoalesceParseAction.AddUnique);
+                AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"Package", plotAutoPackageName, CoalesceParseAction.AddUnique);
 
-                if (game.IsGame3())
+                if (target.Game.IsGame3())
                 {
                     // Additional coalesced entry
                     // Should include localization of _INT
-                    AddCoalescedReference(game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"dlcstartuppackagename", Path.GetFileNameWithoutExtension(startupPackagePath), CoalesceParseAction.AddUnique);
+                    AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioEngine", @"Engine.StartupPackages", @"dlcstartuppackagename", Path.GetFileNameWithoutExtension(startupPackagePath), CoalesceParseAction.AddUnique);
 
                     // Conditionals file
                     CNDFile c = new CNDFile();
                     c.ConditionalEntries = new List<ConditionalEntry>();
-                    c.ToFile(Path.Combine(dlcFolderPath, game.CookedDirName(), $@"Conditionals{Path.GetFileName(dlcFolderPath)}.cnd"));
+                    c.ToFile(Path.Combine(dlcFolderPath, target.Game.CookedDirName(), $@"Conditionals{Path.GetFileName(dlcFolderPath)}.cnd"));
                 }
             }
             #endregion
@@ -693,7 +696,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
         /// <param name="startupPackagePath"></param>
         /// <param name="dlcName"></param>
         /// <returns>Name of package export 'PlotManager[DLCNAME]' that is added to coalesced</returns>
-        private static string AddConditionalsClass(string startupPackagePath, string dlcName)
+        private static string AddConditionalsClass(GameTarget target, string startupPackagePath, string dlcName)
         {
             using var startupFile = MEPackageHandler.OpenMEPackage(startupPackagePath);
             var sfPlotExportName = $@"PlotManager{dlcName}";
@@ -710,8 +713,13 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                 }
             }
 
+            var usop = new UnrealScriptOptionsPackage()
+            {
+                Cache = new TargetPackageCache { RootPath = target.GetBioGamePath() },
+                GamePathOverride = target.TargetPath
+            };
+
             var lib = new FileLib(startupFile);
-            var usop = new UnrealScriptOptionsPackage();
             lib.Initialize(usop);
             var scriptText = @"Class BioAutoConditionals extends BioConditionals; public function bool FTemplateFunction(BioWorldInfo bioWorld, int Argument){ local BioGlobalVariableTable gv; gv = bioWorld.GetGlobalVariables(); return TRUE; } defaultproperties { }";
             UnrealScriptCompiler.CompileClass(startupFile, scriptText, lib, usop, parent: sfPlotExport);
@@ -1050,13 +1058,13 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
         #endregion
 
         #region LE3 Mod Settings Menu
-        public static void AddLE3ModSettingsMenu(IM3Mod mod, MEGame game, string dlcFolderPath, List<Action<DuplicatingIni>> moddescAddinDelegates, Func<List<string>> getModDLCRequirements = null)
+        public static void AddLE3ModSettingsMenu(IM3Mod mod, GameTarget target, string dlcFolderPath, List<Action<DuplicatingIni>> moddescAddinDelegates, Func<List<string>> getModDLCRequirements = null)
         {
-            if (game != MEGame.LE3)
+            if (target.Game != MEGame.LE3)
                 return;
 
             var dlcName = Path.GetFileName(dlcFolderPath);
-            var cookedPath = Path.Combine(dlcFolderPath, game.CookedDirName());
+            var cookedPath = Path.Combine(dlcFolderPath, target.Game.CookedDirName());
 
             // GuiData contains the class that mod settings menu will dynamic load
             var guiDataFName = $@"SFXGUIData_{dlcName}.pcc";
@@ -1064,7 +1072,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             if (!File.Exists(guiDataPackagePath))
             {
                 // Generate GuiData package
-                using var package = MEPackageHandler.CreateAndOpenPackage(guiDataPackagePath, game, true);
+                using var package = MEPackageHandler.CreateAndOpenPackage(guiDataPackagePath, target.Game, true);
                 CreateObjectReferencer(package, false);
                 package.Save();
             }
@@ -1110,8 +1118,13 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
 
 
                 // Compile the classes
+                var usop = new UnrealScriptOptionsPackage()
+                {
+                    Cache = new TargetPackageCache { RootPath = target.GetBioGamePath() },
+                    GamePathOverride = target.TargetPath
+                };
+
                 var fileLib = new FileLib(guiDataPackage);
-                var usop = new UnrealScriptOptionsPackage();
                 if (!fileLib.Initialize(usop))
                 {
                     MLog.Error($@"Error intitializing filelib for sfxguidata package: {fileLib.InitializationLog.AllErrors.Select(msg => msg.ToString())}");
@@ -1137,26 +1150,26 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                 guiDataPackage.Save();
             }
 
-            MountFile mf = new MountFile(Path.Combine(dlcFolderPath, game.CookedDirName(), @"mount.dlc"));
+            MountFile mf = new MountFile(Path.Combine(dlcFolderPath, target.Game.CookedDirName(), @"mount.dlc"));
             // Add the dynamic load mapping for our class.
             Dictionary<string, string> dlm = new CaseInsensitiveDictionary<string>
                 {
                     { @"ObjectName", modSettingsClassPath },
                     { @"SeekFreePackageName", Path.GetFileNameWithoutExtension(guiDataFName) }
                 };
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioEngine", @"sfxgame.sfxengine",
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioEngine", @"sfxgame.sfxengine",
                 @"dynamicloadmapping",
                 StringStructParser.BuildCommaSeparatedSplitValueList(dlm, dlm.Keys.ToArray()),
                 CoalesceParseAction.AddUnique);
 
             // Add BioUI references so our menu loads
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioUI", modSettingsClassPath,
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioUI", modSettingsClassPath,
                 @"confirmationmessageatextoverride", @"247370", CoalesceParseAction.New);
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_sratext",
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_sratext",
                 @"247370", CoalesceParseAction.New);
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_srbtext",
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_srbtext",
                 @"576055", CoalesceParseAction.New);
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_srtitle",
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioUI", modSettingsClassPath, @"m_srtitle",
                 @"3248043", CoalesceParseAction.New); // Point to mod TLK ID?
 
             // Add root menu reference to our menu
@@ -1173,7 +1186,9 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                     },
                     { @"Images[0]", modSettingsClassPath },
                 };
-            AddCoalescedReference(game, dlcName, cookedPath, @"BioUI",
+
+            // Todo: Change to config bundle
+            AddCoalescedReference(target.Game, dlcName, cookedPath, @"BioUI",
                 @"sfxgamecontent.sfxguidata_modsettings_root", @"modsettingitemarray",
                 StringStructParser.BuildCommaSeparatedSplitValueList(msmr, @"SubMenuClassName", @"Images[0]"),
                 CoalesceParseAction.AddUnique);
@@ -1230,14 +1245,14 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             return $@"Class ModSettingsSubmenu_{dlcName} extends ModSettingsSubmenu config(UI); defaultproperties {{ }}";
         }
 
-        public static void AddLE1ModSettingsMenu(IM3Mod mod, MEGame game, string dlcFolderPath,
+        public static void AddLE1ModSettingsMenu(IM3Mod mod, GameTarget target, string dlcFolderPath,
             List<Action<DuplicatingIni>> moddescAddinDelegates, Func<List<string>> getModDLCRequirements = null)
         {
-            if (game != MEGame.LE1)
+            if (target.Game != MEGame.LE1)
                 return;
 
             var dlcName = Path.GetFileName(dlcFolderPath);
-            var cookedPath = Path.Combine(dlcFolderPath, game.CookedDirName());
+            var cookedPath = Path.Combine(dlcFolderPath, target.Game.CookedDirName());
 
             #region Menu class
 
@@ -1248,7 +1263,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                 if (!File.Exists(msmPackageFilePath))
                 {
                     // Generate MSM package. We will re-open it.
-                    using var package = MEPackageHandler.CreateAndOpenPackage(msmPackageFilePath, game, true);
+                    using var package = MEPackageHandler.CreateAndOpenPackage(msmPackageFilePath, target.Game, true);
                     // CreateObjectReferencer(package, false); // Don't think this is needed...
                     package.Save();
                 }
@@ -1273,8 +1288,13 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                     }
 
                     // Compile the classes
+                    var usop = new UnrealScriptOptionsPackage()
+                    {
+                        Cache = new TargetPackageCache { RootPath = target.GetBioGamePath() },
+                        GamePathOverride = target.TargetPath
+                    };
+
                     var fileLib = new FileLib(msmDataPackage);
-                    var usop = new UnrealScriptOptionsPackage();
                     if (!fileLib.Initialize(usop))
                     {
                         var errors = string.Join(@", ", fileLib.InitializationLog.AllErrors.Select(msg => msg.ToString()));
@@ -1289,7 +1309,9 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                     (_, MessageLog log1) = UnrealScriptCompiler.CompileClass(msmDataPackage,
                         new StreamReader(MUtilities.ExtractInternalFileToStream(LE1ModSettingsClassTextAsset))
                             .ReadToEnd(),
-                        fileLib, usop, export: msmDataPackage.FindExport(modSettingsClassPath, @"Class"));
+                        fileLib, 
+                        usop,
+                        export: msmDataPackage.FindExport(modSettingsClassPath, @"Class"));
                     if (log1.HasErrors)
                     {
                         var errors = log1.AllErrors.Select(msg => msg.ToString());
@@ -1323,7 +1345,7 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
                 if (!File.Exists(guiImagesPackageFilePath))
                 {
                     // Generate GUI images package. We will re-open it.
-                    using var package = MEPackageHandler.CreateAndOpenPackage(guiImagesPackageFilePath, game, true);
+                    using var package = MEPackageHandler.CreateAndOpenPackage(guiImagesPackageFilePath, target.Game, true);
                     package.Save();
                 }
 

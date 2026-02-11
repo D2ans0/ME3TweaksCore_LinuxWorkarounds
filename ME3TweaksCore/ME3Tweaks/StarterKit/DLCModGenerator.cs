@@ -183,13 +183,13 @@ namespace ME3TweaksCore.ME3Tweaks.StarterKit
             if (skOption.AddPlotManagerData)
             {
                 UITextCallback?.Invoke($@"{LC.GetString(LC.string_generatingMod)} - PlotManager data");
-                StarterKitAddins.GeneratePlotData(skOption.ModGame, contentDirectory);
+                StarterKitAddins.GeneratePlotData(skOption.Target, contentDirectory);
             }
 
             if (skOption.AddModSettingsMenu)
             {
                 UITextCallback?.Invoke($@"{LC.GetString(LC.string_generatingMod)} - Mod Settings Menu");
-                StarterKitAddins.AddLE3ModSettingsMenu(null, skOption.ModGame, contentDirectory, moddescAddinDelegates);
+                StarterKitAddins.AddLE3ModSettingsMenu(null, skOption.Target, contentDirectory, moddescAddinDelegates);
             }
 
             if (skOption.Blank2DAsToGenerate.Any())

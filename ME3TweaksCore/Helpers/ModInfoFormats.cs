@@ -1,18 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using LegendaryExplorerCore.Helpers;
+﻿using LegendaryExplorerCore.Helpers;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
 using ME3TweaksCore.GameFilesystem;
 using ME3TweaksCore.Localization;
+using System;
+using System.Collections.Generic;
+using System.Data.SqlTypes;
+using System.IO;
+using System.Linq;
+using static LegendaryExplorerCore.Textures.Studio.MEMTextureMap;
 
 namespace ME3TweaksCore.Helpers
 {
 
     public static class ModFileFormats
     {
+        // MEM Tags.
+        private const uint FileTextureTag = 0x53444446;
+        private const uint FileMovieTextureTag = 0x53494246;
+
+
+        /// <summary>
+        /// Rounds the specified version number to one decimal place for normalization purposes.
+        /// </summary>
+        /// <param name="targetVersion">The version number to normalize.</param>
+        /// <returns>A double value representing the normalized version number rounded to one decimal place.</returns>
+        public static double NormalizeModescVersion(double targetVersion)
+        {
+            return Math.Round(targetVersion * 10) / 10;
+        }
+
 
         public static MEGame GetGameMEMFileIsFor(string file)
         {
@@ -91,14 +108,90 @@ namespace ME3TweaksCore.Helpers
                 if (string.IsNullOrWhiteSpace(name)) name = LC.GetString(LC.string_nameNotListedInMemBrackets);
                 var offset = memFile.ReadUInt64();
                 var size = memFile.ReadUInt64();
-                var flags = memFile.ReadUInt64();
+
+                // 04/04/2025 - It looks like MEM Legacy did not write this value
+                // as shown here https://github.com/MassEffectModder/MassEffectModderLegacy/blob/d7ce737cfc63e3c99c4b64be8d0f953ed3bc6943/MassEffectModder/Misc.cs#L1983
+                if (version >= 3)
+                {
+                    var flags = memFile.ReadUInt64();
+                }
+
                 files.Add(name);
             }
 
             return files;
         }
 
-        // Mod files are NOT supported in M3
+        /// <summary>
+        /// Texture entry in a .mem file
+        /// </summary>
+        class MEMTexture
+        {
+            public MEMTexture(Stream memFile, int version)
+            {
+                this.version = version;
+                tag = memFile.ReadInt32();
+                name = memFile.ReadStringASCIINull();
+                if (string.IsNullOrWhiteSpace(name)) name = LC.GetString(LC.string_nameNotListedInMemBrackets);
+                offset = memFile.ReadUInt64();
+                size = memFile.ReadUInt64();
+
+                // 04/04/2025 - It looks like MEM Legacy did not write this value
+                // as shown here https://github.com/MassEffectModder/MassEffectModderLegacy/blob/d7ce737cfc63e3c99c4b64be8d0f953ed3bc6943/MassEffectModder/Misc.cs#L1983
+                if (version >= 3)
+                {
+                    flags = memFile.ReadUInt64();
+                }
+            }
+
+            private int version { get; set; }
+            public int tag { get; set; }
+            public string name { get; set; }
+            public ulong offset { get; set; }
+            public ulong size { get; set; }
+            public ulong flags { get; set; }
+
+
+        }
+
+        public static List<uint> GetTargetHashesFromMEM(Stream memFile)
+        {
+            var hashes = new List<uint>();
+            var magic = memFile.ReadStringASCII(4);
+            if (magic != @"TMOD")
+            {
+                return hashes;
+            }
+            var version = memFile.ReadInt32(); //3 = LE
+            var gameIdOffset = memFile.ReadInt64();
+            memFile.Position = gameIdOffset;
+            var gameId = memFile.ReadInt32();
+
+            var numFiles = memFile.ReadInt32();
+            List<MEMTexture> memTexs = new List<MEMTexture>();
+            for (int i = 0; i < numFiles; i++)
+            {
+                // Read header table
+                var memTex = new MEMTexture(memFile, version);
+                memTexs.Add(memTex);
+            }
+
+            // Check every entry now
+            foreach (var t in memTexs)
+            {
+                memFile.Seek((long)t.offset, SeekOrigin.Begin);
+                if (t.tag == FileTextureTag || t.tag == FileMovieTextureTag)
+                {
+                    var textureFlags = memFile.ReadUInt32();
+                    var crc = memFile.ReadUInt32();
+                    hashes.Add(crc);
+                }
+            }
+
+            return hashes;
+        }
+
+    // Mod files are NOT supported in M3
 #if ALOT
         public static ModFileInfo GetGameForMod(string file)
         {
@@ -208,5 +301,5 @@ namespace ME3TweaksCore.Helpers
         }
 #endif
 
-    }
+}
 }

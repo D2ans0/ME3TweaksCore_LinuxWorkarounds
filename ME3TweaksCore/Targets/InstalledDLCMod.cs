@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using LegendaryExplorerCore.Misc;
 using LegendaryExplorerCore.Packages;
 using ME3TweaksCore.Diagnostics;
@@ -14,7 +8,6 @@ using ME3TweaksCore.Helpers;
 using ME3TweaksCore.Localization;
 using ME3TweaksCore.Services.ThirdPartyModIdentification;
 using PropertyChanged;
-using Serilog;
 
 namespace ME3TweaksCore.Targets
 {
@@ -22,6 +15,9 @@ namespace ME3TweaksCore.Targets
     public class InstalledDLCMod
     {
         protected string dlcFolderPath;
+        /// <summary>
+        /// If DLC is enabled
+        /// </summary>
         public bool IsEnabled => DLCFolderName.StartsWith(@"DLC_");
         public string EnableDisableText => IsEnabled ? LC.GetString(LC.string_disable) : LC.GetString(LC.string_enable);
         public string DeleteText { get; set; } = LC.GetString(LC.string_delete);
@@ -45,11 +41,16 @@ namespace ME3TweaksCore.Targets
         private MEGame game;
 
         protected Func<InstalledDLCMod, bool> deleteConfirmationCallback;
-        protected Action notifyDeleted;
-        private Action notifyToggled;
 
+        /// <summary>
+        /// Listener to invoke when this item has been deleted
+        /// </summary>
+        protected Action<InstalledDLCMod> notifyDeleted;
 
-
+        /// <summary>
+        /// Listener to invoke when enabling/disabling
+        /// </summary>
+        private Action<InstalledDLCMod> notifyToggled;
 
         /// <summary>
         /// Indicates that this mod was installed by ALOT Installer or Mod Manager.
@@ -61,7 +62,7 @@ namespace ME3TweaksCore.Targets
             parseMetaCmm(DLCFolderName.StartsWith('x'), false);
         }
 
-        public InstalledDLCMod(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action notifyDeleted, Action notifyToggled, bool modNamePrefersTPMI)
+        public InstalledDLCMod(string dlcFolderPath, MEGame game, Func<InstalledDLCMod, bool> deleteConfirmationCallback, Action<InstalledDLCMod> notifyDeleted, Action<InstalledDLCMod> notifyToggled, bool modNamePrefersTPMI)
         {
             this.dlcFolderPath = dlcFolderPath;
             this.game = game;
@@ -83,7 +84,8 @@ namespace ME3TweaksCore.Targets
 
         private void parseMetaCmm(bool disabled, bool modNamePrefersTPMI)
         {
-            DLCFolderNameString = DLCFolderName.TrimStart('x'); //this string is not to show M3L.GetString(M3L.string_disabled)
+            // Get name of DLC folder, removing beginning x if any.
+            DLCFolderNameString = DLCFolderName.TrimStart('x');
             var metaFile = Path.Combine(dlcFolderPath, @"_metacmm.txt");
             if (File.Exists(metaFile))
             {
@@ -144,13 +146,12 @@ namespace ME3TweaksCore.Targets
                 DLCFolderName = newdlcname;
                 dlcFolderPath = target;
                 EnableDisableTooltip = LC.GetString(isBecomingDisabled ? LC.string_tooltip_enableDLC : LC.string_tooltip_disableDLC);
-                notifyToggled?.Invoke();
+                notifyToggled?.Invoke(this);
             }
             catch (Exception e)
             {
                 MLog.Error(@"Unable to toggle DLC: " + e.Message);
             }
-            //TriggerPropertyChangedFor(nameof(DLCFolderName));
         }
 
         public bool CanToggleDLC() => (game is MEGame.ME3 || game.IsLEGame() || DLCFolderName.StartsWith('x')) && !MUtilities.IsGameRunning(game);
@@ -168,7 +169,7 @@ namespace ME3TweaksCore.Targets
                 try
                 {
                     MUtilities.DeleteFilesAndFoldersRecursively(dlcFolderPath);
-                    notifyDeleted?.Invoke();
+                    notifyDeleted?.Invoke(this);
                 }
                 catch (Exception e)
                 {
