@@ -227,7 +227,7 @@ namespace ME3TweaksCore.Diagnostics.Modules
                 {
                     str += @"Maximum reported clock speed: ";
                     str += (cpuInfo.CPUMaxClock/1000).ToString();
-                    str += " Mhz\n";
+                    str += " Mhz\n"; //do not localize
                 }
 
                 if (cpuInfo.CPUPhysicalCores != 0)
